@@ -1,0 +1,353 @@
+# experiences.fun — AI Onboarding Agent
+
+## Purpose of the Agent
+
+The onboarding agent helps new users:
+
+1. Understand what experiences.fun is  
+2. Quickly create their profile  
+3. Identify their interests  
+4. Connect them to relevant experiences  
+5. Activate their first action within 60 seconds  
+
+The onboarding must feel:
+
+- fast
+- optimistic
+- mission-driven
+- community-focused
+
+The goal is **activation**, not data collection.
+
+---
+
+# Agent Personality
+
+The agent should feel like:
+
+- a guide
+- a community builder
+- a mission coordinator
+
+Tone:
+
+- concise
+- optimistic
+- encouraging
+- slightly visionary
+
+Example tone:
+
+"Welcome to experiences.fun.  
+This is where people turn real-world actions into measurable impact."
+
+---
+
+# Onboarding Flow Overview
+
+The onboarding has **6 steps total**.
+
+Target completion time:
+
+45–60 seconds.
+
+Flow structure:
+
+discover experience  
+→ join experience  
+→ participate  
+→ record impact  
+→ earn XP  
+→ share results  
+→ invite friends  
+→ more experiences created  
+
+---
+
+# Step 1 — Welcome
+
+### Agent Prompt
+
+Welcome to experiences.fun.
+
+This platform helps people participate in real-world experiences that create measurable impact.
+
+Instead of just scrolling social media, people here:
+
+• plant trees  
+• mentor students  
+• clean beaches  
+• host workshops  
+• build communities  
+
+Let’s set up your profile so you can start participating.
+
+This takes less than a minute.
+
+CTA button:
+
+Start
+
+---
+
+# Step 2 — Location
+
+Location is critical because experiences are **local-first**.
+
+### Agent Prompt
+
+First — where are you based?
+
+We use your location to show nearby experiences and community initiatives.
+
+User inputs:
+
+City  
+Country  
+
+Example:
+
+London, United Kingdom
+
+Stored as:
+
+user.city  
+user.country
+
+---
+
+# Step 3 — Interests
+
+Now we identify **experience categories**.
+
+### Agent Prompt
+
+What kinds of experiences interest you most?
+
+Choose anything that feels exciting.
+
+Selectable options:
+
+Environmental action  
+Education & mentoring  
+Community volunteering  
+Creative workshops  
+Entrepreneurship  
+Health & wellbeing  
+Technology  
+Local events  
+
+Stored as:
+
+user.interests[]
+
+---
+
+# Step 4 — Contribution Type
+
+This identifies how the user wants to engage.
+
+### Agent Prompt
+
+How would you like to participate?
+
+Options:
+
+Join experiences  
+Host experiences  
+Both  
+
+Explanation:
+
+Joining means participating in activities.
+
+Hosting means organizing experiences for others.
+
+Stored as:
+
+user.role
+
+---
+
+# Step 5 — Profile Creation
+
+Now we create the minimal user identity.
+
+### Agent Prompt
+
+Let’s create your profile.
+
+This helps the community recognise your contributions.
+
+Fields:
+
+Name  
+Username  
+Short bio (optional)
+
+Example bio prompt:
+
+Tell us something about you.
+
+Example:  
+"I love nature and helping local communities."
+
+Stored as:
+
+user.name  
+user.username  
+user.bio
+
+---
+
+# Step 6 — First Experience Recommendation
+
+Now we **activate the user immediately**.
+
+### Agent Prompt
+
+Nice to meet you, {name}.
+
+Based on your interests, here are some experiences you can join this week.
+
+Display:
+
+3 recommended experiences.
+
+Example card:
+
+Community Tree Planting  
+London  
+Saturday  
++100 XP
+
+Buttons:
+
+Join  
+Save
+
+---
+
+# Final Activation Message
+
+The agent concludes onboarding with a mission-oriented statement.
+
+### Agent Prompt
+
+You’re all set.
+
+Every experience you join contributes to real-world impact.
+
+Your actions will help grow a global network of people improving their communities.
+
+Ready to start?
+
+CTA:
+
+Explore Experiences
+
+---
+
+# Data Captured During Onboarding
+
+This onboarding collects only essential fields:
+
+name  
+username  
+city  
+country  
+interests[]  
+role  
+bio  
+
+This keeps onboarding **fast and frictionless**.
+
+---
+
+# XP Reward for Onboarding
+
+Completing onboarding should award:
+
++50 XP
+
+Agent message:
+
+You just earned your first 50 XP.
+
+Now let’s create some real impact.
+
+---
+
+# Viral Layer
+
+At the end of onboarding we add **one optional growth trigger**.
+
+### Agent Prompt
+
+Want to bring friends into this?
+
+Experiences are more fun with people you know.
+
+Button:
+
+Invite Friends
+
+Share link format:
+
+experiences.fun/join/{username}
+
+---
+
+# UX Principles
+
+Onboarding must:
+
+- take under 60 seconds
+- show real experiences immediately
+- reward the user instantly
+- emphasize community participation
+
+Avoid:
+
+- long forms
+- complex questions
+- technical explanations
+
+---
+
+# Cursor Implementation Prompt
+
+Create a 6-step onboarding flow for experiences.fun using React, Next.js and Tailwind.
+
+Steps:
+
+1. Welcome  
+2. Location input  
+3. Interests selection  
+4. Participation type  
+5. Profile creation  
+6. Experience recommendations  
+
+The onboarding should store user data in Supabase and award 50 XP when completed.
+
+The UI should use card-based components and feel optimistic and community-driven.
+
+---
+
+# Strategic Insight
+
+The real objective of onboarding is **not signup**.
+
+It is **behavior activation**.
+
+The key success metric:
+
+% of users who join their first experience within 24 hours.
+
+If that number is high, the platform grows naturally.
+
+If not, growth stalls.
+
+So onboarding must end with:
+
+"Join your first experience now."
