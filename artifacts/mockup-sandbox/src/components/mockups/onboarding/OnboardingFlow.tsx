@@ -129,7 +129,7 @@ export default function OnboardingFlow() {
         `}
       >
         {/* Back Button */}
-        {step > 1 && step < 6 && (
+        {step > 1 && (
           <button 
             onClick={prevStep}
             className="absolute top-6 left-6 text-gray-400 hover:text-gray-800 transition-colors bg-gray-50 hover:bg-gray-100 rounded-full p-2"
@@ -419,8 +419,6 @@ export default function OnboardingFlow() {
   );
 }
 
-// Simple MapPin Icon replacement to avoid extra lucide-react import size if not needed globally, 
-// though we can import MapPin from lucide-react. Let's define it here just in case.
 function MapPinIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
