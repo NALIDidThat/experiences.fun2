@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -86,18 +86,30 @@ export default function OnboardingFlow() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Emojis for the top area based on step
-  const getEmojis = () => {
-    switch (step) {
-      case 1: return ["🌍", "🌱", "🤝", "🎨", "🚀"];
-      case 2: return ["📍", "🗺️", "🏙️"];
-      case 3: return ["🌿", "📚", "🎨", "💻"];
-      case 4: return ["🙋‍♂️", "🎯", "🌟"];
-      case 5: return ["👤", "✨", "📝"];
-      case 6: return ["🎉", "🚀", "⭐"];
-      default: return [];
-    }
+  const STEP_EMOJIS: Record<Step, string[]> = {
+    1: ["🌍", "🌱", "🤝", "🎨", "🚀"],
+    2: ["📍", "🗺️", "🏙️"],
+    3: ["🌿", "📚", "🎨", "💻"],
+    4: ["🙋‍♂️", "🎯", "🌟"],
+    5: ["👤", "✨", "📝"],
+    6: ["🎉", "🚀", "⭐"],
   };
+
+  const emojiPositions = useMemo(() => {
+    const positions: Record<number, { top: number; left: number; rotation: number }[]> = {};
+    for (let s = 1; s <= 6; s++) {
+      const emojis = STEP_EMOJIS[s as Step];
+      positions[s] = emojis.map((_, i) => ({
+        top: 20 + ((i * 17 + s * 7) % 40),
+        left: 10 + (i * 80) / Math.max(1, emojis.length - 1),
+        rotation: -15 + ((i * 13 + s * 5) % 30),
+      }));
+    }
+    return positions;
+  }, []);
+
+  const currentEmojis = STEP_EMOJIS[step];
+  const currentPositions = emojiPositions[step];
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-[#5B5FE6] to-[#818CF8] flex flex-col items-center justify-end sm:justify-center overflow-hidden font-sans relative">
@@ -105,15 +117,15 @@ export default function OnboardingFlow() {
       {/* Background Floating Elements */}
       <div className="absolute top-0 left-0 w-full h-[50vh] sm:h-full pointer-events-none overflow-hidden flex items-center justify-center">
         <div className="relative w-full max-w-md h-full">
-          {getEmojis().map((emoji, i) => (
+          {currentEmojis.map((emoji, i) => (
             <div
               key={`${step}-${i}`}
               className="absolute text-5xl sm:text-7xl animate-in fade-in zoom-in duration-700 drop-shadow-lg"
               style={{
-                top: `${20 + Math.random() * 40}%`,
-                left: `${10 + (i * 80) / Math.max(1, getEmojis().length - 1)}%`,
+                top: `${currentPositions[i].top}%`,
+                left: `${currentPositions[i].left}%`,
                 animationDelay: `${i * 100}ms`,
-                transform: `translate(-50%, -50%) rotate(${-15 + Math.random() * 30}deg)`,
+                transform: `translate(-50%, -50%) rotate(${currentPositions[i].rotation}deg)`,
               }}
             >
               {emoji}
