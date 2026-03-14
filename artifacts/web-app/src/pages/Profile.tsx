@@ -60,7 +60,8 @@ export default function Profile() {
       { username: profile.username },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+          queryClient.invalidateQueries({ queryKey: [`/api/users/${profile.username}`] });
+          queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
         },
       }
     );
