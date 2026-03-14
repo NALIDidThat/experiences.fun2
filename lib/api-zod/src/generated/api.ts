@@ -14,3 +14,77 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Creates or updates a user profile from onboarding data and awards 50 XP
+ * @summary Complete user onboarding
+ */
+export const CompleteOnboardingBody = zod.object({
+  telegram_id: zod.string().nullish(),
+  name: zod.string(),
+  username: zod.string(),
+  city: zod.string(),
+  country: zod.string(),
+  interests: zod.array(zod.string()),
+  role: zod.enum(["join", "host", "both"]),
+  bio: zod.string().nullish(),
+});
+
+export const CompleteOnboardingResponse = zod.object({
+  success: zod.boolean(),
+  user: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    username: zod.string(),
+    city: zod.string(),
+    country: zod.string(),
+    interests: zod.array(zod.string()),
+    role: zod.string(),
+    bio: zod.string().nullish(),
+    xp: zod.number(),
+    upvote_count: zod.number(),
+    created_at: zod.string(),
+  }),
+  session_token: zod.string(),
+});
+
+/**
+ * Returns a user profile by username
+ * @summary Get user profile
+ */
+export const GetUserProfileParams = zod.object({
+  username: zod.coerce.string(),
+});
+
+export const GetUserProfileResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  username: zod.string(),
+  city: zod.string(),
+  country: zod.string(),
+  interests: zod.array(zod.string()),
+  role: zod.string(),
+  bio: zod.string().nullish(),
+  xp: zod.number(),
+  upvote_count: zod.number(),
+  created_at: zod.string(),
+});
+
+/**
+ * Returns whether a username is available
+ * @summary Check username availability
+ */
+export const CheckUsernameParams = zod.object({
+  username: zod.coerce.string(),
+});
+
+export const CheckUsernameResponse = zod.object({
+  available: zod.boolean(),
+  username: zod.string(),
+});
+
+/**
+ * Receives updates from Telegram bot
+ * @summary Telegram bot webhook
+ */
+export const TelegramWebhookBody = zod.object({}).passthrough();

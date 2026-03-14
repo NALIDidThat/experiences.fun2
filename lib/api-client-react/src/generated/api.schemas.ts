@@ -8,3 +8,55 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type OnboardingRequestRole =
+  (typeof OnboardingRequestRole)[keyof typeof OnboardingRequestRole];
+
+export const OnboardingRequestRole = {
+  join: "join",
+  host: "host",
+  both: "both",
+} as const;
+
+export interface OnboardingRequest {
+  telegram_id?: string | null;
+  name: string;
+  username: string;
+  city: string;
+  country: string;
+  interests: string[];
+  role: OnboardingRequestRole;
+  bio?: string | null;
+}
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  username: string;
+  city: string;
+  country: string;
+  interests: string[];
+  role: string;
+  bio?: string | null;
+  xp: number;
+  upvote_count: number;
+  created_at: string;
+}
+
+export interface OnboardingResponse {
+  success: boolean;
+  user: UserProfile;
+  session_token: string;
+}
+
+export interface UsernameAvailability {
+  available: boolean;
+  username: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+  message: string;
+}
+
+export type TelegramWebhookBody = { [key: string]: unknown };

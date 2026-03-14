@@ -26,3 +26,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+TELEGRAM_BOT_TOKEN = "8668501499:AAFJElddl0FTbivo_P7ODNUc6H8FEASw-Jc"

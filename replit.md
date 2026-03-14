@@ -2,6 +2,8 @@
 
 ## Overview
 
+**experiences.fun** — a platform where users join/create real-world local experiences, earn XP on completion, and upvote each other for contributions. Works as both a standalone web app and a Telegram Mini App.
+
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
 ## Stack
@@ -15,82 +17,122 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite + Tailwind CSS + Framer Motion
+- **Routing**: wouter (frontend), Express 5 (backend)
 
 ## Structure
 
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   ├── web-app/            # React + Vite frontend (experiences.fun)
+│   └── mockup-sandbox/     # Component preview sandbox
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
 ├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
+│   └── src/                # Individual .ts scripts
+├── pnpm-workspace.yaml     # pnpm workspace
+├── tsconfig.base.json      # Shared TS options
 ├── tsconfig.json           # Root TS project references
 └── package.json            # Root package with hoisted devDeps
 ```
 
+## Key Features
+
+### Onboarding Flow (6 steps, one question per screen)
+1. Welcome — hero screen with "Start" CTA
+2. Location — city + country inputs
+3. Interests — multi-select tile grid (8 categories)
+4. Participation — Join/Host/Both (auto-advances on selection)
+5. Profile — name, @username, optional bio (Telegram pre-fill if in Mini App)
+6. Completion — +50 XP celebration, 3 experience previews, "Explore" CTA
+
+### User Profile (/u/:username)
+- Avatar (initials fallback), name, @username, city, bio
+- XP total with level bar (500 XP per level)
+- Upvote count
+- Two tabs: Personal / Professional experiences
+
+### Telegram Integration
+- Bot menu button opens the web app
+- /start → onboarding or home (if registered)
+- /me → shows profile info
+- Webhook at POST /api/telegram/webhook
+- Bot setup runs on server start (requires MINI_APP_URL env var)
+
+### Dual-mode Detection
+- `window.Telegram?.WebApp` detects Telegram Mini App context
+- Standalone mode uses localStorage session tokens
+- Telegram mode uses initData for auth
+
+## Database Schema
+
+### users table
+- id (serial PK), telegram_id (unique, nullable), name, username (unique)
+- city, country, interests (text[]), role (join|host|both), bio (nullable)
+- xp (default 0), upvote_count (default 0), session_token, created_at
+
+## API Endpoints
+
+- `GET /api/healthz` — health check
+- `POST /api/onboarding/complete` — complete onboarding, create user, award 50 XP
+- `GET /api/users/:username` — get user profile
+- `GET /api/users/check-username/:username` — check username availability
+- `POST /api/telegram/webhook` — Telegram bot webhook
+
+## Environment Variables
+
+- `TELEGRAM_BOT_TOKEN` — Telegram bot API token (shared secret)
+- `MINI_APP_URL` — Published Replit domain for webhook + menu button setup
+- `DATABASE_URL` — Auto-provided by Replit
+- `PORT` — Auto-assigned per artifact
+
 ## TypeScript & Composite Projects
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references.
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+- **Always typecheck from the root** — run `pnpm run typecheck`
+- **`emitDeclarationOnly`** — only emit `.d.ts` files during typecheck
+- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array
 
 ## Root Scripts
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages
+- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly`
 
 ## Packages
 
+### `artifacts/web-app` (`@workspace/web-app`)
+
+React + Vite frontend at root path `/`. Uses wouter for routing, Framer Motion for animations, and shadcn/ui components. Dual-mode: standalone web app + Telegram Mini App.
+
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for validation and `@workspace/db` for persistence. Sets up Telegram bot webhook on start.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- Routes: health, onboarding, users, telegram
+- Entry: `src/index.ts` — reads `PORT`, starts Express, calls `setupTelegramBot()`
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+Database layer using Drizzle ORM with PostgreSQL. Schema: users table.
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+OpenAPI 3.1 spec and Orval codegen config. Run codegen: `pnpm --filter @workspace/api-spec run codegen`
 
 ### `lib/api-zod` (`@workspace/api-zod`)
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+Generated Zod schemas from OpenAPI spec.
 
 ### `lib/api-client-react` (`@workspace/api-client-react`)
 
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
+Generated React Query hooks and fetch client from OpenAPI spec.
 
 ### `scripts` (`@workspace/scripts`)
 
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+Utility scripts. Run via `pnpm --filter @workspace/scripts run <script>`.

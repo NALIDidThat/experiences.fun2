@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: onboarding
+    description: Onboarding operations
+  - name: users
+    description: User operations
+  - name: telegram
+    description: Telegram webhook
 paths:
   /healthz:
     get:
@@ -24,6 +30,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /onboarding/complete:
+    post:
+      operationId: completeOnboarding
+      tags: [onboarding]
+      summary: Complete user onboarding
+      description: Creates or updates a user profile from onboarding data and awards 50 XP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingRequest"
+      responses:
+        "200":
+          description: Onboarding completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingResponse"
+        "409":
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{username}:
+    get:
+      operationId: getUserProfile
+      tags: [users]
+      summary: Get user profile
+      description: Returns a user profile by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/check-username/{username}:
+    get:
+      operationId: checkUsername
+      tags: [users]
+      summary: Check username availability
+      description: Returns whether a username is available
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Username availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsernameAvailability"
+  /telegram/webhook:
+    post:
+      operationId: telegramWebhook
+      tags: [telegram]
+      summary: Telegram bot webhook
+      description: Receives updates from Telegram bot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
 components:
   schemas:
     HealthStatus:
@@ -33,4 +123,106 @@ components:
           type: string
       required:
         - status
-
+    OnboardingRequest:
+      type: object
+      properties:
+        telegram_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        username:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        interests:
+          type: array
+          items:
+            type: string
+        role:
+          type: string
+          enum: [join, host, both]
+        bio:
+          type: string
+          nullable: true
+      required:
+        - name
+        - username
+        - city
+        - country
+        - interests
+        - role
+    OnboardingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        session_token:
+          type: string
+      required:
+        - success
+        - user
+        - session_token
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        interests:
+          type: array
+          items:
+            type: string
+        role:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        xp:
+          type: integer
+        upvote_count:
+          type: integer
+        created_at:
+          type: string
+      required:
+        - id
+        - name
+        - username
+        - city
+        - country
+        - interests
+        - role
+        - xp
+        - upvote_count
+        - created_at
+    UsernameAvailability:
+      type: object
+      properties:
+        available:
+          type: boolean
+        username:
+          type: string
+      required:
+        - available
+        - username
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message

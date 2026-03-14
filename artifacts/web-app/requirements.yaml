@@ -1,0 +1,9 @@
+packages:
+  "framer-motion": "For smooth step transitions and card animations in onboarding"
+  "use-debounce": "For debouncing username availability API checks"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility to merge tailwind classes safely"
+
+notes:
+  - Expects @workspace/api-client-react to export the generated hooks (useCompleteOnboarding, etc.)
+  - Telegram WebApp SDK is expected to be loaded via standard script tag in index.html (window.Telegram)

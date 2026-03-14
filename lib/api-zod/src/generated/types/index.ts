@@ -6,4 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./onboardingRequest";
+export * from "./onboardingRequestRole";
+export * from "./onboardingResponse";
+export * from "./telegramWebhookBody";
+export * from "./usernameAvailability";
+export * from "./userProfile";

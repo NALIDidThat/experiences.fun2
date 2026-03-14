@@ -1,0 +1,151 @@
+import { Router, type IRouter, type Request, type Response } from "express";
+import { eq } from "drizzle-orm";
+import { randomBytes } from "crypto";
+import { db } from "@workspace/db";
+import { usersTable } from "@workspace/db";
+import {
+  CompleteOnboardingBody,
+  CompleteOnboardingResponse,
+} from "@workspace/api-zod";
+import { verifyTelegramInitData } from "../lib/telegram-auth";
+
+const router: IRouter = Router();
+
+router.post("/onboarding/complete", async (req: Request, res: Response): Promise<void> => {
+  const parsed = CompleteOnboardingBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", message: parsed.error.message });
+    return;
+  }
+
+  const { name, username, city, country, interests, role, bio } = parsed.data;
+
+  let verifiedTelegramId: string | null = null;
+  const telegramInitData = req.headers["x-telegram-init-data"];
+  if (telegramInitData && typeof telegramInitData === "string") {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (botToken) {
+      const verification = verifyTelegramInitData(telegramInitData, botToken);
+      if (verification.valid && verification.user) {
+        verifiedTelegramId = String(verification.user.id);
+      }
+    }
+  }
+
+  if (verifiedTelegramId) {
+    const [existingByTelegram] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.telegram_id, verifiedTelegramId))
+      .limit(1);
+
+    if (existingByTelegram) {
+      const session_token = existingByTelegram.session_token || randomBytes(32).toString("hex");
+
+      const [updated] = await db
+        .update(usersTable)
+        .set({ name, username, city, country, interests, role, bio: bio || null, session_token })
+        .where(eq(usersTable.id, existingByTelegram.id))
+        .returning();
+
+      res.json(
+        CompleteOnboardingResponse.parse({
+          success: true,
+          user: {
+            id: updated.id,
+            name: updated.name,
+            username: updated.username,
+            city: updated.city,
+            country: updated.country,
+            interests: updated.interests,
+            role: updated.role,
+            bio: updated.bio,
+            xp: updated.xp,
+            upvote_count: updated.upvote_count,
+            created_at: updated.created_at?.toISOString(),
+          },
+          session_token,
+        })
+      );
+      return;
+    }
+  }
+
+  const existing = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.username, username))
+    .limit(1);
+
+  if (existing.length > 0) {
+    res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+    return;
+  }
+
+  const session_token = randomBytes(32).toString("hex");
+
+  try {
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        name,
+        username,
+        city,
+        country,
+        interests,
+        role,
+        bio: bio || null,
+        telegram_id: verifiedTelegramId,
+        xp: 50,
+        upvote_count: 0,
+        session_token,
+      })
+      .returning();
+
+    if (verifiedTelegramId) {
+      try {
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (botToken) {
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: verifiedTelegramId,
+              text: `Welcome to experiences.fun, ${name}! 🎉\n\nYou've earned +50 XP for completing your profile. Start exploring experiences near ${city}!`,
+            }),
+          });
+        }
+      } catch (e) {
+        console.error("Failed to send Telegram welcome message:", e);
+      }
+    }
+
+    res.json(
+      CompleteOnboardingResponse.parse({
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          city: user.city,
+          country: user.country,
+          interests: user.interests,
+          role: user.role,
+          bio: user.bio,
+          xp: user.xp,
+          upvote_count: user.upvote_count,
+          created_at: user.created_at?.toISOString(),
+        },
+        session_token,
+      })
+    );
+  } catch (e: any) {
+    if (e?.code === "23505") {
+      res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+      return;
+    }
+    throw e;
+  }
+});
+
+export default router;
