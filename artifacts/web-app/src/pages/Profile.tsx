@@ -4,7 +4,7 @@ import { MapPin, Settings, Loader2, Calendar } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useGetUserProfile, useGetCurrentUser } from "@workspace/api-client-react";
-import { getAuthHeaders, getSessionToken } from "@/lib/auth";
+import { getAuthHeaders, isAuthenticated } from "@/lib/auth";
 
 export default function Profile() {
   const [match, params] = useRoute("/u/:username");
@@ -12,7 +12,7 @@ export default function Profile() {
   const isMe = params?.username === "me";
   const username = params?.username || "";
 
-  const meQuery = { enabled: isMe && !!getSessionToken() };
+  const meQuery = { enabled: isMe && isAuthenticated() };
   const meResult = useGetCurrentUser({
     query: meQuery as typeof meQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() }

@@ -1,4 +1,4 @@
-import { getTelegramInitData } from "./telegram";
+import { getTelegramInitData, isTelegramWebApp } from "./telegram";
 
 export function getSessionToken(): string | null {
   return localStorage.getItem('session_token');
@@ -6,6 +6,10 @@ export function getSessionToken(): string | null {
 
 export function setSessionToken(token: string) {
   localStorage.setItem('session_token', token);
+}
+
+export function isAuthenticated(): boolean {
+  return !!getSessionToken() || isTelegramWebApp();
 }
 
 export function getAuthHeaders(): HeadersInit {

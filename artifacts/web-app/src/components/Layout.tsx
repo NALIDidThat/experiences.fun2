@@ -1,14 +1,14 @@
 import React from "react";
 import { Link, useRoute } from "wouter";
 import { Home, UserCircle } from "lucide-react";
-import { getSessionToken } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/auth";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const hasSession = !!getSessionToken();
+  const hasSession = isAuthenticated();
   const [isHome] = useRoute("/home");
   const [isProfile] = useRoute("/u/:username");
 
