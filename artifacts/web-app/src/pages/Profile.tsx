@@ -18,13 +18,15 @@ export default function Profile() {
   // If it's me and we don't know the username, we should ideally decode JWT.
   // For this UI build, if the API fails we show a graceful state.
 
-  const { data: profile, isLoading, error } = useGetUserProfile(username, {
+  const profileResult = useGetUserProfile(username, {
     query: {
       enabled: !!username && username !== "me",
       retry: false
-    },
+    } as any,
     request: { headers: getAuthHeaders() }
   });
+  const profile = profileResult.data;
+  const isLoading = profileResult.isLoading;
 
   const [activeTab, setActiveTab] = useState<"personal" | "professional">("personal");
 

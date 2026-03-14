@@ -80,12 +80,14 @@ export default function Onboarding() {
 
   // Username validation logic
   const [debouncedUsername] = useDebounce(formData.username, 500);
-  const { data: usernameData, isLoading: isCheckingUsername } = useCheckUsername(debouncedUsername, {
+  const checkUsernameResult = useCheckUsername(debouncedUsername, {
     query: {
       enabled: debouncedUsername.length > 2 && step === 5,
-    },
+    } as any,
     request: { headers: getAuthHeaders() }
   });
+  const usernameData = checkUsernameResult.data;
+  const isCheckingUsername = checkUsernameResult.isLoading;
 
   const usernameError = debouncedUsername.length > 0 && debouncedUsername.length < 3 
     ? "Username must be at least 3 characters" 
@@ -146,7 +148,7 @@ export default function Onboarding() {
       x: 0,
       opacity: 1,
       scale: 1,
-      transition: { duration: 0.4, type: "spring", bounce: 0.2 }
+      transition: { duration: 0.4, type: "spring" as const, bounce: 0.2 }
     },
     exit: (direction: number) => ({
       x: direction < 0 ? 50 : -50,
