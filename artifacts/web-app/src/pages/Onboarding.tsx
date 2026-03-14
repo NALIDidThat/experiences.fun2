@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FloatingEmojis } from "@/components/FloatingEmojis";
 import { getTelegramUser } from "@/lib/telegram";
-import { setSessionToken, getAuthHeaders } from "@/lib/auth";
-import { useCompleteOnboarding, useCheckUsername } from "@workspace/api-client-react";
+import { setSessionToken, getSessionToken, getAuthHeaders } from "@/lib/auth";
+import { useCompleteOnboarding, useCheckUsername, useGetCurrentUser } from "@workspace/api-client-react";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -62,25 +62,51 @@ export default function Onboarding() {
     bio: "",
   });
 
+  const hasSession = !!getSessionToken();
+  const isEditMode = hasSession;
+  const [originalUsername, setOriginalUsername] = useState<string>("");
+
+  const currentUserQuery = { enabled: hasSession };
+  const currentUserResult = useGetCurrentUser({
+    query: currentUserQuery as typeof currentUserQuery & { queryKey: readonly unknown[] },
+    request: { headers: getAuthHeaders() }
+  });
+
   const completeMutation = useCompleteOnboarding({
     request: { headers: getAuthHeaders() }
   });
 
-  // Pre-fill from Telegram if available
+  useEffect(() => {
+    if (currentUserResult.data && isEditMode) {
+      const u = currentUserResult.data;
+      setOriginalUsername(u.username);
+      setFormData(prev => ({
+        ...prev,
+        name: u.name,
+        username: u.username,
+        city: u.city,
+        country: u.country,
+        interests: u.interests,
+        participation: u.role as "join" | "host" | "both",
+        bio: u.bio || "",
+      }));
+    }
+  }, [currentUserResult.data, isEditMode]);
+
   useEffect(() => {
     const tgUser = getTelegramUser();
-    if (tgUser && step === 1) {
+    if (tgUser && step === 1 && !isEditMode) {
       setFormData(prev => ({
         ...prev,
         name: tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ""),
         username: tgUser.username || "",
       }));
     }
-  }, [step]);
+  }, [step, isEditMode]);
 
-  // Username validation logic
   const [debouncedUsername] = useDebounce(formData.username, 500);
-  const checkUsernameQuery = { enabled: debouncedUsername.length > 2 && step === 5 };
+  const isOwnUsername = isEditMode && debouncedUsername === originalUsername;
+  const checkUsernameQuery = { enabled: debouncedUsername.length > 2 && step === 5 && !isOwnUsername };
   const checkUsernameResult = useCheckUsername(debouncedUsername, {
     query: checkUsernameQuery as typeof checkUsernameQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() }
@@ -90,7 +116,7 @@ export default function Onboarding() {
 
   const usernameError = debouncedUsername.length > 0 && debouncedUsername.length < 3 
     ? "Username must be at least 3 characters" 
-    : (usernameData && !usernameData.available ? "Username is already taken" : null);
+    : (usernameData && !usernameData.available && !isOwnUsername ? "Username is already taken" : null);
 
   const nextStep = () => {
     if (step < 6) {

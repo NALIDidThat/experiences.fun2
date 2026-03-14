@@ -56,35 +56,75 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
       .limit(1);
 
     if (existingByTelegram) {
+      if (username !== existingByTelegram.username) {
+        const [conflict] = await db
+          .select({ id: usersTable.id })
+          .from(usersTable)
+          .where(eq(usersTable.username, username))
+          .limit(1);
+        if (conflict) {
+          res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+          return;
+        }
+      }
+
       const session_token = existingByTelegram.session_token || randomBytes(32).toString("hex");
 
-      const [updated] = await db
-        .update(usersTable)
-        .set({ name, username, city, country, interests, role, bio: bio || null, session_token })
-        .where(eq(usersTable.id, existingByTelegram.id))
-        .returning();
+      try {
+        const [updated] = await db
+          .update(usersTable)
+          .set({ name, username, city, country, interests, role, bio: bio || null, session_token })
+          .where(eq(usersTable.id, existingByTelegram.id))
+          .returning();
 
-      res.json(CompleteOnboardingResponse.parse({
-        success: true,
-        user: userToResponse(updated),
-        session_token,
-      }));
+        res.json(CompleteOnboardingResponse.parse({
+          success: true,
+          user: userToResponse(updated),
+          session_token,
+        }));
+      } catch (e: unknown) {
+        if (e && typeof e === "object" && "code" in e && e.code === "23505") {
+          res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+          return;
+        }
+        throw e;
+      }
       return;
     }
   }
 
   if (req.currentUser) {
-    const [updated] = await db
-      .update(usersTable)
-      .set({ name, username, city, country, interests, role, bio: bio || null })
-      .where(eq(usersTable.id, req.currentUser.id))
-      .returning();
+    if (username !== req.currentUser.username) {
+      const [conflict] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.username, username))
+        .limit(1);
+      if (conflict) {
+        res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+        return;
+      }
+    }
 
-    res.json(CompleteOnboardingResponse.parse({
-      success: true,
-      user: userToResponse(updated),
-      session_token: req.currentUser.session_token!,
-    }));
+    try {
+      const [updated] = await db
+        .update(usersTable)
+        .set({ name, username, city, country, interests, role, bio: bio || null })
+        .where(eq(usersTable.id, req.currentUser.id))
+        .returning();
+
+      res.json(CompleteOnboardingResponse.parse({
+        success: true,
+        user: userToResponse(updated),
+        session_token: req.currentUser.session_token!,
+      }));
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "code" in e && e.code === "23505") {
+        res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+        return;
+      }
+      throw e;
+    }
     return;
   }
 
