@@ -164,7 +164,7 @@ export default function Onboarding() {
         
         {/* Header & Navigation */}
         <div className="absolute top-0 left-0 w-full p-6 z-20 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-50/50">
-          {step > 1 && step < 6 ? (
+          {step > 1 ? (
             <button 
               onClick={prevStep}
               className="text-gray-400 hover:text-gray-800 transition-colors bg-gray-50 hover:bg-gray-100 rounded-full p-2.5 shadow-sm"

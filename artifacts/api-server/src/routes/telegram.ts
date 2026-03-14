@@ -20,6 +20,7 @@ router.post("/telegram/webhook", async (req: Request, res: Response): Promise<vo
     const text = update.message.text;
     const telegramId = String(update.message.from.id);
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const miniAppUrl = process.env.MINI_APP_URL;
 
     if (!botToken) {
       res.json({ ok: true });
@@ -34,9 +35,17 @@ router.post("/telegram/webhook", async (req: Request, res: Response): Promise<vo
         .limit(1);
 
       if (user) {
-        await sendTelegramMessage(botToken, chatId, `Welcome back, ${user.name}! 🎉\n\nYou have ${user.xp} XP. Open the app to explore experiences!`);
+        await sendTelegramMessageWithWebApp(
+          botToken, chatId,
+          `Welcome back, ${user.name}! 🎉\n\nYou have ${user.xp} XP. Tap below to explore experiences!`,
+          "Open App", miniAppUrl ? `${miniAppUrl}/home` : undefined
+        );
       } else {
-        await sendTelegramMessage(botToken, chatId, `Welcome to experiences.fun! 🌍\n\nTap the button below to get started and earn your first 50 XP!`);
+        await sendTelegramMessageWithWebApp(
+          botToken, chatId,
+          `Welcome to experiences.fun! 🌍\n\nTap below to get started and earn your first 50 XP!`,
+          "Get Started", miniAppUrl || undefined
+        );
       }
     } else if (text === "/me") {
       const [user] = await db
@@ -46,13 +55,17 @@ router.post("/telegram/webhook", async (req: Request, res: Response): Promise<vo
         .limit(1);
 
       if (user) {
-        await sendTelegramMessage(
-          botToken,
-          chatId,
-          `👤 ${user.name} (@${user.username})\n⭐ ${user.xp} XP | 👍 ${user.upvote_count} upvotes\n📍 ${user.city}, ${user.country}\n\nOpen your profile in the app!`,
+        await sendTelegramMessageWithWebApp(
+          botToken, chatId,
+          `👤 ${user.name} (@${user.username})\n⭐ ${user.xp} XP | 👍 ${user.upvote_count} upvotes\n📍 ${user.city}, ${user.country}\n\nTap below to view your full profile.`,
+          "View Profile", miniAppUrl ? `${miniAppUrl}/u/${user.username}` : undefined
         );
       } else {
-        await sendTelegramMessage(botToken, chatId, "You haven't signed up yet! Use /start to begin.");
+        await sendTelegramMessageWithWebApp(
+          botToken, chatId,
+          "You haven't signed up yet! Tap below to begin.",
+          "Sign Up", miniAppUrl || undefined
+        );
       }
     }
   }
@@ -60,12 +73,26 @@ router.post("/telegram/webhook", async (req: Request, res: Response): Promise<vo
   res.json({ ok: true });
 });
 
-async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
+async function sendTelegramMessageWithWebApp(
+  botToken: string, chatId: number, text: string,
+  buttonText: string, webAppUrl?: string
+) {
   try {
+    const body: Record<string, unknown> = { chat_id: chatId, text };
+
+    if (webAppUrl) {
+      body.reply_markup = {
+        inline_keyboard: [[{
+          text: buttonText,
+          web_app: { url: webAppUrl }
+        }]]
+      };
+    }
+
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify(body),
     });
   } catch (e) {
     console.error("Failed to send Telegram message:", e);
