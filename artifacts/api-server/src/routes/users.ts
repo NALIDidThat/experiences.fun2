@@ -109,7 +109,7 @@ router.get("/users/:username", async (req: Request, res: Response): Promise<void
       type: e.type,
       category: e.category,
       role: "hosted" as const,
-      status: e.status as "joined" | "completed",
+      status: (e.status === "completed" ? "completed" : "joined") as "joined" | "completed",
       xp_earned: 0,
       date: e.date,
       city: e.city,

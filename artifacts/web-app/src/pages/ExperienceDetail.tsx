@@ -36,6 +36,7 @@ export default function ExperienceDetail() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
+          queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
         },
       }
     );
@@ -47,6 +48,7 @@ export default function ExperienceDetail() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
+          queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
         },
       }
     );

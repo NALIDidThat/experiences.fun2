@@ -170,6 +170,9 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
+                  <span className="capitalize bg-gray-50 px-2.5 py-1 rounded-lg font-medium text-gray-600">
+                    {CATEGORIES.find(c => c.id === exp.category)?.icon || "📌"} {exp.category}
+                  </span>
                   <span className="flex items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg font-medium text-gray-600">
                     <MapPin className="w-3.5 h-3.5" /> {exp.city}
                   </span>
