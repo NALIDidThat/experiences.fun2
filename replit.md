@@ -76,11 +76,27 @@ artifacts-monorepo/
 - city, country, interests (text[]), role (join|host|both), bio (nullable)
 - xp (default 0), upvote_count (default 0), session_token, created_at
 
+## Authentication
+
+### Dual-mode auth
+- **Telegram Mini App**: `X-Telegram-Init-Data` header verified server-side with HMAC
+- **Standalone web**: `Authorization: Bearer <session_token>` header; session token stored in localStorage after onboarding
+
+### Auth middleware
+- `optionalAuth` middleware (`api-server/src/lib/auth-middleware.ts`) runs on all routes
+- Reads Bearer token from Authorization header, looks up user by `session_token` column
+- Sets `req.currentUser` if found (undefined otherwise)
+
+### Edit profile flow
+- Standalone users with a session token can re-enter onboarding to edit their profile
+- The onboarding endpoint checks `req.currentUser` and UPDATEs instead of INSERTing
+
 ## API Endpoints
 
 - `GET /api/healthz` — health check
-- `POST /api/onboarding/complete` — complete onboarding, create user, award 50 XP
-- `GET /api/users/:username` — get user profile
+- `POST /api/onboarding/complete` — complete onboarding, create/update user, award 50 XP
+- `GET /api/users/me` — get current user profile (requires Bearer token)
+- `GET /api/users/:username` — get user profile by username
 - `GET /api/users/check-username/:username` — check username availability
 - `POST /api/telegram/webhook` — Telegram bot webhook
 

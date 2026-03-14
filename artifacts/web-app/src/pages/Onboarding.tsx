@@ -80,10 +80,9 @@ export default function Onboarding() {
 
   // Username validation logic
   const [debouncedUsername] = useDebounce(formData.username, 500);
+  const checkUsernameQuery = { enabled: debouncedUsername.length > 2 && step === 5 };
   const checkUsernameResult = useCheckUsername(debouncedUsername, {
-    query: {
-      enabled: debouncedUsername.length > 2 && step === 5,
-    } as any,
+    query: checkUsernameQuery as typeof checkUsernameQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() }
   });
   const usernameData = checkUsernameResult.data;

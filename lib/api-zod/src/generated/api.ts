@@ -49,6 +49,24 @@ export const CompleteOnboardingResponse = zod.object({
 });
 
 /**
+ * Returns the profile of the currently authenticated user
+ * @summary Get current user profile
+ */
+export const GetCurrentUserResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  username: zod.string(),
+  city: zod.string(),
+  country: zod.string(),
+  interests: zod.array(zod.string()),
+  role: zod.string(),
+  bio: zod.string().nullish(),
+  xp: zod.number(),
+  upvote_count: zod.number(),
+  created_at: zod.string(),
+});
+
+/**
  * Returns a user profile by username
  * @summary Get user profile
  */

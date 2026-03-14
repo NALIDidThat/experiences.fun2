@@ -11,6 +11,22 @@ import { verifyTelegramInitData } from "../lib/telegram-auth";
 
 const router: IRouter = Router();
 
+function userToResponse(user: typeof usersTable.$inferSelect) {
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    city: user.city,
+    country: user.country,
+    interests: user.interests,
+    role: user.role,
+    bio: user.bio,
+    xp: user.xp,
+    upvote_count: user.upvote_count,
+    created_at: user.created_at?.toISOString(),
+  };
+}
+
 router.post("/onboarding/complete", async (req: Request, res: Response): Promise<void> => {
   const parsed = CompleteOnboardingBody.safeParse(req.body);
   if (!parsed.success) {
@@ -48,27 +64,28 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
         .where(eq(usersTable.id, existingByTelegram.id))
         .returning();
 
-      res.json(
-        CompleteOnboardingResponse.parse({
-          success: true,
-          user: {
-            id: updated.id,
-            name: updated.name,
-            username: updated.username,
-            city: updated.city,
-            country: updated.country,
-            interests: updated.interests,
-            role: updated.role,
-            bio: updated.bio,
-            xp: updated.xp,
-            upvote_count: updated.upvote_count,
-            created_at: updated.created_at?.toISOString(),
-          },
-          session_token,
-        })
-      );
+      res.json(CompleteOnboardingResponse.parse({
+        success: true,
+        user: userToResponse(updated),
+        session_token,
+      }));
       return;
     }
+  }
+
+  if (req.currentUser) {
+    const [updated] = await db
+      .update(usersTable)
+      .set({ name, username, city, country, interests, role, bio: bio || null })
+      .where(eq(usersTable.id, req.currentUser.id))
+      .returning();
+
+    res.json(CompleteOnboardingResponse.parse({
+      success: true,
+      user: userToResponse(updated),
+      session_token: req.currentUser.session_token!,
+    }));
+    return;
   }
 
   const existing = await db
@@ -120,27 +137,13 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
       }
     }
 
-    res.json(
-      CompleteOnboardingResponse.parse({
-        success: true,
-        user: {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          city: user.city,
-          country: user.country,
-          interests: user.interests,
-          role: user.role,
-          bio: user.bio,
-          xp: user.xp,
-          upvote_count: user.upvote_count,
-          created_at: user.created_at?.toISOString(),
-        },
-        session_token,
-      })
-    );
-  } catch (e: any) {
-    if (e?.code === "23505") {
+    res.json(CompleteOnboardingResponse.parse({
+      success: true,
+      user: userToResponse(user),
+      session_token,
+    }));
+  } catch (e: unknown) {
+    if (e && typeof e === "object" && "code" in e && e.code === "23505") {
       res.status(409).json({ error: "username_taken", message: "This username is already taken" });
       return;
     }

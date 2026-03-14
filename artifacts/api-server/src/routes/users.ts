@@ -34,6 +34,30 @@ router.get("/users/check-username/:username", async (req: Request, res: Response
   );
 });
 
+router.get("/users/me", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const user = req.currentUser;
+  res.json(
+    GetUserProfileResponse.parse({
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      city: user.city,
+      country: user.country,
+      interests: user.interests,
+      role: user.role,
+      bio: user.bio,
+      xp: user.xp,
+      upvote_count: user.upvote_count,
+      created_at: user.created_at?.toISOString(),
+    })
+  );
+});
+
 router.get("/users/:username", async (req: Request, res: Response): Promise<void> => {
   const params = GetUserProfileParams.safeParse(req.params);
   if (!params.success) {

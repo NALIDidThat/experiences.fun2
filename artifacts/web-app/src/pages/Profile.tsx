@@ -1,32 +1,32 @@
-import React, { useState } from "react";
-import { useRoute, Link, useLocation } from "wouter";
-import { MapPin, Trophy, Settings, Loader2, Calendar } from "lucide-react";
+import { useState } from "react";
+import { useRoute, useLocation } from "wouter";
+import { MapPin, Settings, Loader2, Calendar } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { getTelegramUser } from "@/lib/telegram";
-import { useGetUserProfile } from "@workspace/api-client-react";
-import { getAuthHeaders } from "@/lib/auth";
+import { useGetUserProfile, useGetCurrentUser } from "@workspace/api-client-react";
+import { getAuthHeaders, getSessionToken } from "@/lib/auth";
 
 export default function Profile() {
   const [match, params] = useRoute("/u/:username");
   const [, setLocation] = useLocation();
-  const username = params?.username === "me" 
-    ? (getTelegramUser()?.username || "me") // Fallback, normally would decode from session token
-    : params?.username || "";
+  const isMe = params?.username === "me";
+  const username = params?.username || "";
 
-  // Mocking "me" handling for the prototype since we don't have a /api/me yet
-  // If it's me and we don't know the username, we should ideally decode JWT.
-  // For this UI build, if the API fails we show a graceful state.
-
-  const profileResult = useGetUserProfile(username, {
-    query: {
-      enabled: !!username && username !== "me",
-      retry: false
-    } as any,
+  const meQuery = { enabled: isMe && !!getSessionToken() };
+  const meResult = useGetCurrentUser({
+    query: meQuery as typeof meQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() }
   });
-  const profile = profileResult.data;
-  const isLoading = profileResult.isLoading;
+
+  const otherQuery = { enabled: !isMe && !!username, retry: false as const };
+  const otherResult = useGetUserProfile(isMe ? "_" : username, {
+    query: otherQuery as typeof otherQuery & { queryKey: readonly unknown[] },
+    request: { headers: getAuthHeaders() }
+  });
+
+  const profile = isMe ? meResult.data : otherResult.data;
+  const isLoading = isMe ? meResult.isLoading : otherResult.isLoading;
+  const error = isMe ? meResult.error : otherResult.error;
 
   const [activeTab, setActiveTab] = useState<"personal" | "professional">("personal");
 
@@ -40,33 +40,38 @@ export default function Profile() {
     );
   }
 
-  // Fallback profile if API is not fully hooked up or /me is used without a real username
-  const p = profile || {
-    name: getTelegramUser()?.first_name || "Awesome User",
-    username: username === "me" ? "awesomeuser" : username,
-    city: "London",
-    bio: "Passionate about building community and learning new things.",
-    xp: 50,
-    upvote_count: 0,
-    interests: ["community", "tech"]
-  };
+  if (!profile || error) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex flex-col items-center justify-center px-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {isMe ? "Not logged in" : "User not found"}
+          </h2>
+          <p className="text-gray-500 mb-6">
+            {isMe ? "Complete onboarding to create your profile." : `No user found with username @${username}.`}
+          </p>
+          <Button onClick={() => setLocation("/")} className="rounded-xl bg-primary hover:bg-primary/90">
+            {isMe ? "Get Started" : "Go Home"}
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
 
-  const level = Math.max(1, Math.floor(p.xp / 500) + 1);
-  const xpInCurrentLevel = p.xp % 500;
+  const level = Math.max(1, Math.floor(profile.xp / 500) + 1);
+  const xpInCurrentLevel = profile.xp % 500;
   const progressPercent = (xpInCurrentLevel / 500) * 100;
 
-  const initials = p.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+  const initials = profile.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pb-24">
-        {/* Profile Header Background */}
         <div className="h-48 bg-gradient-to-r from-primary via-purple-500 to-fuchsia-500 relative">
           <div className="absolute inset-0 bg-black/10"></div>
         </div>
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-20">
-          {/* Avatar Card */}
           <div className="bg-white rounded-3xl shadow-lg p-6 sm:p-8 mb-6 border border-gray-100">
             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
               <div className="w-32 h-32 rounded-full border-4 border-white bg-primary text-white flex items-center justify-center text-4xl font-display font-bold shadow-md shrink-0">
@@ -76,34 +81,35 @@ export default function Profile() {
               <div className="flex-1 w-full">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">{p.name}</h1>
-                    <p className="text-primary font-medium text-lg">@{p.username}</p>
+                    <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
+                    <p className="text-primary font-medium text-lg">@{profile.username}</p>
                     
                     <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 justify-center sm:justify-start">
                       <span className="flex items-center bg-gray-100 px-3 py-1 rounded-full text-gray-700 font-medium">
                         <MapPin className="w-4 h-4 mr-1.5" />
-                        {p.city}
+                        {profile.city}
                       </span>
                     </div>
                   </div>
                   
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setLocation("/")}
-                    className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                  {isMe && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setLocation("/")}
+                      className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
                 </div>
 
-                {p.bio && (
+                {profile.bio && (
                   <p className="mt-5 text-gray-600 leading-relaxed max-w-xl">
-                    {p.bio}
+                    {profile.bio}
                   </p>
                 )}
 
-                {/* Level & Stats */}
                 <div className="mt-8 bg-gray-50 rounded-2xl p-5 border border-gray-100 flex flex-col sm:flex-row gap-6">
                   <div className="flex-1">
                     <div className="flex justify-between items-end mb-2">
@@ -113,9 +119,8 @@ export default function Profile() {
                           <span className="text-2xl font-bold text-gray-900">Level {level}</span>
                         </div>
                       </div>
-                      <span className="text-sm font-medium text-primary">{p.xp} XP total</span>
+                      <span className="text-sm font-medium text-primary">{profile.xp} XP total</span>
                     </div>
-                    {/* XP Progress Bar */}
                     <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full transition-all duration-1000 ease-out"
@@ -130,12 +135,12 @@ export default function Profile() {
                   <div className="flex gap-6 sm:justify-end justify-center pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-200">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
-                        {p.upvote_count} <span className="text-amber-400 text-xl">↑</span>
+                        {profile.upvote_count} <span className="text-amber-400 text-xl">&#8593;</span>
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Upvotes</span>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{p.interests.length}</div>
+                      <div className="text-2xl font-bold text-gray-900">{profile.interests.length}</div>
                       <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Interests</span>
                     </div>
                   </div>
@@ -145,7 +150,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Tabs Section */}
           <div>
             <div className="flex p-1 bg-gray-200/50 rounded-2xl w-full sm:w-auto inline-flex mb-6">
               <button
