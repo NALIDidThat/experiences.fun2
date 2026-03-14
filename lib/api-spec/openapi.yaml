@@ -14,6 +14,8 @@ tags:
     description: Onboarding operations
   - name: users
     description: User operations
+  - name: experiences
+    description: Experience operations
   - name: telegram
     description: Telegram webhook
 paths:
@@ -78,8 +80,8 @@ paths:
     get:
       operationId: getUserProfile
       tags: [users]
-      summary: Get user profile
-      description: Returns a user profile by username
+      summary: Get user profile with experience history
+      description: Returns a user profile with personal and professional experience arrays
       parameters:
         - name: username
           in: path
@@ -90,11 +92,11 @@ paths:
             pattern: "^[a-z0-9_]+$"
       responses:
         "200":
-          description: User profile
+          description: User profile with experiences
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserProfile"
+                $ref: "#/components/schemas/UserProfileFull"
         "404":
           description: User not found
           content:
@@ -122,6 +124,170 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UsernameAvailability"
+  /users/{username}/upvote:
+    post:
+      operationId: toggleUpvote
+      tags: [users]
+      summary: Toggle upvote on a user
+      description: Toggles an upvote on the target user. One upvote per user pair.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 3
+      responses:
+        "200":
+          description: Upvote toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpvoteResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /experiences:
+    get:
+      operationId: listExperiences
+      tags: [experiences]
+      summary: List experiences
+      description: Returns a paginated list of experiences with optional filters
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [personal, professional]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        "200":
+          description: List of experiences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperienceList"
+    post:
+      operationId: createExperience
+      tags: [experiences]
+      summary: Create a new experience
+      description: Creates a new experience. Requires authentication.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExperienceRequest"
+      responses:
+        "201":
+          description: Experience created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperienceDetail"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /experiences/{id}:
+    get:
+      operationId: getExperience
+      tags: [experiences]
+      summary: Get experience detail
+      description: Returns full experience detail including joined status for authenticated users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Experience detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExperienceDetail"
+        "404":
+          description: Experience not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /experiences/{id}/join:
+    post:
+      operationId: joinExperience
+      tags: [experiences]
+      summary: Join an experience
+      description: Join an experience as a participant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Joined successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinExperienceResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /experiences/{id}/complete:
+    post:
+      operationId: completeExperience
+      tags: [experiences]
+      summary: Mark experience as complete
+      description: Mark an experience as completed for the current user. Awards XP.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteExperienceResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /telegram/webhook:
     post:
       operationId: telegramWebhook
@@ -241,6 +407,92 @@ components:
         - xp
         - upvote_count
         - created_at
+    UserProfileFull:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        interests:
+          type: array
+          items:
+            type: string
+        role:
+          type: string
+        bio:
+          type: string
+          nullable: true
+        xp:
+          type: integer
+        upvote_count:
+          type: integer
+        has_upvoted:
+          type: boolean
+        created_at:
+          type: string
+        personal_experiences:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserExperienceCard"
+        professional_experiences:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserExperienceCard"
+      required:
+        - id
+        - name
+        - username
+        - city
+        - country
+        - interests
+        - role
+        - xp
+        - upvote_count
+        - has_upvoted
+        - created_at
+        - personal_experiences
+        - professional_experiences
+    UserExperienceCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [personal, professional]
+        category:
+          type: string
+        role:
+          type: string
+          enum: [hosted, joined]
+        status:
+          type: string
+          enum: [joined, completed]
+        xp_earned:
+          type: integer
+        date:
+          type: string
+        city:
+          type: string
+      required:
+        - id
+        - title
+        - type
+        - category
+        - role
+        - status
+        - xp_earned
+        - date
+        - city
     UsernameAvailability:
       type: object
       properties:
@@ -251,6 +503,208 @@ components:
       required:
         - available
         - username
+    UpvoteResponse:
+      type: object
+      properties:
+        upvoted:
+          type: boolean
+        upvote_count:
+          type: integer
+      required:
+        - upvoted
+        - upvote_count
+    ExperienceCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum: [personal, professional]
+        category:
+          type: string
+        date:
+          type: string
+        city:
+          type: string
+        xp_reward:
+          type: integer
+        participant_count:
+          type: integer
+        max_participants:
+          type: integer
+          nullable: true
+        creator_name:
+          type: string
+        creator_username:
+          type: string
+        status:
+          type: string
+      required:
+        - id
+        - title
+        - type
+        - category
+        - date
+        - city
+        - xp_reward
+        - participant_count
+        - creator_name
+        - creator_username
+        - status
+    ExperienceList:
+      type: object
+      properties:
+        experiences:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperienceCard"
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required:
+        - experiences
+        - total
+        - page
+        - page_size
+    ExperienceDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [personal, professional]
+        category:
+          type: string
+        date:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        xp_reward:
+          type: integer
+        max_participants:
+          type: integer
+          nullable: true
+        participant_count:
+          type: integer
+        status:
+          type: string
+        creator:
+          $ref: "#/components/schemas/ExperienceCreator"
+        joined:
+          type: boolean
+        participation_status:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - type
+        - category
+        - date
+        - city
+        - country
+        - xp_reward
+        - participant_count
+        - status
+        - creator
+        - joined
+        - created_at
+    ExperienceCreator:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+      required:
+        - id
+        - name
+        - username
+    CreateExperienceRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        type:
+          type: string
+          enum: [personal, professional]
+        category:
+          type: string
+          minLength: 1
+        date:
+          type: string
+          minLength: 1
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        max_participants:
+          type: integer
+          minimum: 2
+          nullable: true
+        xp_reward:
+          type: integer
+          minimum: 10
+          maximum: 500
+      required:
+        - title
+        - description
+        - type
+        - category
+        - date
+        - city
+        - country
+    JoinExperienceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        participant_count:
+          type: integer
+      required:
+        - success
+        - participant_count
+    CompleteExperienceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        xp_earned:
+          type: integer
+        total_xp:
+          type: integer
+      required:
+        - success
+        - xp_earned
+        - total_xp
     ErrorResponse:
       type: object
       properties:

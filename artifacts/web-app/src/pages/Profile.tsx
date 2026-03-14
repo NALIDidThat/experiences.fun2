@@ -1,34 +1,70 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { MapPin, Settings, Loader2, Calendar } from "lucide-react";
+import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { useGetUserProfile, useGetCurrentUser } from "@workspace/api-client-react";
+import { useGetUserProfile, useGetCurrentUser, useToggleUpvote } from "@workspace/api-client-react";
 import { getAuthHeaders, isAuthenticated } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
+
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+const LEVEL_LABELS: Record<number, string> = {
+  1: "Explorer",
+  2: "Contributor",
+  3: "Champion",
+  4: "Leader",
+  5: "Legend",
+};
+
+function getLevelLabel(level: number): string {
+  if (level >= 5) return LEVEL_LABELS[5];
+  return LEVEL_LABELS[level] || "Explorer";
+}
 
 export default function Profile() {
-  const [match, params] = useRoute("/u/:username");
+  const [, params] = useRoute("/u/:username");
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const isMe = params?.username === "me";
   const username = params?.username || "";
 
   const meQuery = { enabled: isMe && isAuthenticated() };
   const meResult = useGetCurrentUser({
     query: meQuery as typeof meQuery & { queryKey: readonly unknown[] },
-    request: { headers: getAuthHeaders() }
+    request: { headers: getAuthHeaders() },
   });
 
   const otherQuery = { enabled: !isMe && !!username, retry: false as const };
   const otherResult = useGetUserProfile(isMe ? "_" : username, {
     query: otherQuery as typeof otherQuery & { queryKey: readonly unknown[] },
-    request: { headers: getAuthHeaders() }
+    request: { headers: getAuthHeaders() },
+  });
+
+  const upvoteMutation = useToggleUpvote({
+    request: { headers: getAuthHeaders() },
   });
 
   const profile = isMe ? meResult.data : otherResult.data;
+  const fullProfile = !isMe ? otherResult.data : null;
   const isLoading = isMe ? meResult.isLoading : otherResult.isLoading;
   const error = isMe ? meResult.error : otherResult.error;
 
   const [activeTab, setActiveTab] = useState<"personal" | "professional">("personal");
+
+  const handleUpvote = () => {
+    if (!profile) return;
+    upvoteMutation.mutate(
+      { username: profile.username },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+        },
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -61,14 +97,17 @@ export default function Profile() {
   const level = Math.max(1, Math.floor(profile.xp / 500) + 1);
   const xpInCurrentLevel = profile.xp % 500;
   const progressPercent = (xpInCurrentLevel / 500) * 100;
+  const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const initials = profile.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+  const personalExperiences = fullProfile?.personal_experiences || [];
+  const professionalExperiences = fullProfile?.professional_experiences || [];
+  const tabExperiences = activeTab === "personal" ? personalExperiences : professionalExperiences;
 
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pb-24">
         <div className="h-48 bg-gradient-to-r from-primary via-purple-500 to-fuchsia-500 relative">
-          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="absolute inset-0 bg-black/10" />
         </div>
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative -mt-20">
@@ -77,13 +116,17 @@ export default function Profile() {
               <div className="w-32 h-32 rounded-full border-4 border-white bg-primary text-white flex items-center justify-center text-4xl font-display font-bold shadow-md shrink-0">
                 {initials}
               </div>
-              
+
               <div className="flex-1 w-full">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
                     <p className="text-primary font-medium text-lg">@{profile.username}</p>
-                    
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                        {getLevelLabel(level)}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 justify-center sm:justify-start">
                       <span className="flex items-center bg-gray-100 px-3 py-1 rounded-full text-gray-700 font-medium">
                         <MapPin className="w-4 h-4 mr-1.5" />
@@ -91,23 +134,39 @@ export default function Profile() {
                       </span>
                     </div>
                   </div>
-                  
-                  {isMe && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setLocation("/")}
-                      className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  )}
+
+                  <div className="flex gap-2">
+                    {isMe && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setLocation("/")}
+                        className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                    )}
+                    {!isMe && isAuthenticated() && (
+                      <Button
+                        variant={fullProfile?.has_upvoted ? "default" : "outline"}
+                        onClick={handleUpvote}
+                        disabled={upvoteMutation.isPending}
+                        className={cn(
+                          "rounded-xl",
+                          fullProfile?.has_upvoted
+                            ? "bg-primary hover:bg-primary/90"
+                            : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                        )}
+                      >
+                        <ThumbsUp className="w-4 h-4 mr-2" />
+                        {fullProfile?.has_upvoted ? "Upvoted" : "Upvote"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {profile.bio && (
-                  <p className="mt-5 text-gray-600 leading-relaxed max-w-xl">
-                    {profile.bio}
-                  </p>
+                  <p className="mt-5 text-gray-600 leading-relaxed max-w-xl">{profile.bio}</p>
                 )}
 
                 <div className="mt-8 bg-gray-50 rounded-2xl p-5 border border-gray-100 flex flex-col sm:flex-row gap-6">
@@ -122,16 +181,16 @@ export default function Profile() {
                       <span className="text-sm font-medium text-primary">{profile.xp} XP total</span>
                     </div>
                     <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full transition-all duration-1000 ease-out"
                         style={{ width: `${Math.max(5, progressPercent)}%` }}
                       />
                     </div>
                     <p className="text-xs text-gray-400 mt-2 text-right">{500 - xpInCurrentLevel} XP to next level</p>
                   </div>
-                  
-                  <div className="w-px bg-gray-200 hidden sm:block"></div>
-                  
+
+                  <div className="w-px bg-gray-200 hidden sm:block" />
+
                   <div className="flex gap-6 sm:justify-end justify-center pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-200">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
@@ -145,7 +204,6 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -154,40 +212,87 @@ export default function Profile() {
             <div className="flex p-1 bg-gray-200/50 rounded-2xl w-full sm:w-auto inline-flex mb-6">
               <button
                 onClick={() => setActiveTab("personal")}
-                className={`flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === "personal" 
-                    ? "bg-white text-gray-900 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                className={cn(
+                  "flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  activeTab === "personal" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
               >
-                Personal
+                Personal ({personalExperiences.length})
               </button>
               <button
                 onClick={() => setActiveTab("professional")}
-                className={`flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === "professional" 
-                    ? "bg-white text-gray-900 shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
+                className={cn(
+                  "flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  activeTab === "professional" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
               >
-                Professional
+                Professional ({professionalExperiences.length})
               </button>
             </div>
 
-            <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[300px]">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <Calendar className="w-8 h-8 text-gray-300" />
+            {tabExperiences.length === 0 && (
+              <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[300px]">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <Calendar className="w-8 h-8 text-gray-300" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} experiences yet</h3>
+                <p className="text-gray-500 max-w-sm mb-6">
+                  {isMe
+                    ? `Join or host a ${activeTab} experience to see it here.`
+                    : `This user hasn't ${activeTab === "personal" ? "joined any personal" : "joined any professional"} experiences yet.`}
+                </p>
+                {isMe && (
+                  <Button
+                    onClick={() => setLocation("/home")}
+                    className="rounded-xl bg-primary hover:bg-primary/90"
+                  >
+                    Explore experiences
+                  </Button>
+                )}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} experiences yet</h3>
-              <p className="text-gray-500 max-w-sm mb-6">
-                When you join or host an experience tagged as {activeTab}, it will appear here.
-              </p>
-              <Button className="rounded-xl bg-primary hover:bg-primary/90">
-                Explore experiences
-              </Button>
-            </div>
-          </div>
+            )}
 
+            {tabExperiences.length > 0 && (
+              <div className="space-y-3">
+                {tabExperiences.map((exp) => (
+                  <button
+                    key={exp.id}
+                    onClick={() => setLocation(`/experience/${exp.id}`)}
+                    className="w-full text-left bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-bold text-gray-900">{exp.title}</h3>
+                      <span
+                        className={cn(
+                          "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
+                          exp.role === "hosted" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
+                        )}
+                      >
+                        {exp.role === "hosted" ? "Hosted" : "Joined"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
+                      <span className="capitalize bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">
+                        {exp.category}
+                      </span>
+                      <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">{exp.date}</span>
+                      <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {exp.city}
+                      </span>
+                      {exp.status === "completed" && exp.xp_earned > 0 && (
+                        <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+                          <Trophy className="w-3 h-3" /> +{exp.xp_earned} XP
+                        </span>
+                      )}
+                      {exp.status === "joined" && (
+                        <span className="text-xs font-semibold text-gray-400">In progress</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

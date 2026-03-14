@@ -17,12 +17,20 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CompleteExperienceResponse,
+  CreateExperienceRequest,
   ErrorResponse,
+  ExperienceDetail,
+  ExperienceList,
   HealthStatus,
+  JoinExperienceResponse,
+  ListExperiencesParams,
   OnboardingRequest,
   OnboardingResponse,
   TelegramWebhookBody,
+  UpvoteResponse,
   UserProfile,
+  UserProfileFull,
   UsernameAvailability,
 } from "./api.schemas";
 
@@ -275,8 +283,8 @@ export function useGetCurrentUser<
 }
 
 /**
- * Returns a user profile by username
- * @summary Get user profile
+ * Returns a user profile with personal and professional experience arrays
+ * @summary Get user profile with experience history
  */
 export const getGetUserProfileUrl = (username: string) => {
   return `/api/users/${username}`;
@@ -285,8 +293,8 @@ export const getGetUserProfileUrl = (username: string) => {
 export const getUserProfile = async (
   username: string,
   options?: RequestInit,
-): Promise<UserProfile> => {
-  return customFetch<UserProfile>(getGetUserProfileUrl(username), {
+): Promise<UserProfileFull> => {
+  return customFetch<UserProfileFull>(getGetUserProfileUrl(username), {
     ...options,
     method: "GET",
   });
@@ -337,7 +345,7 @@ export type GetUserProfileQueryResult = NonNullable<
 export type GetUserProfileQueryError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Get user profile
+ * @summary Get user profile with experience history
  */
 
 export function useGetUserProfile<
@@ -450,6 +458,531 @@ export function useCheckUsername<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Toggles an upvote on the target user. One upvote per user pair.
+ * @summary Toggle upvote on a user
+ */
+export const getToggleUpvoteUrl = (username: string) => {
+  return `/api/users/${username}/upvote`;
+};
+
+export const toggleUpvote = async (
+  username: string,
+  options?: RequestInit,
+): Promise<UpvoteResponse> => {
+  return customFetch<UpvoteResponse>(getToggleUpvoteUrl(username), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getToggleUpvoteMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleUpvote>>,
+    TError,
+    { username: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleUpvote>>,
+  TError,
+  { username: string },
+  TContext
+> => {
+  const mutationKey = ["toggleUpvote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleUpvote>>,
+    { username: string }
+  > = (props) => {
+    const { username } = props ?? {};
+
+    return toggleUpvote(username, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleUpvoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleUpvote>>
+>;
+
+export type ToggleUpvoteMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Toggle upvote on a user
+ */
+export const useToggleUpvote = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleUpvote>>,
+    TError,
+    { username: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleUpvote>>,
+  TError,
+  { username: string },
+  TContext
+> => {
+  return useMutation(getToggleUpvoteMutationOptions(options));
+};
+
+/**
+ * Returns a paginated list of experiences with optional filters
+ * @summary List experiences
+ */
+export const getListExperiencesUrl = (params?: ListExperiencesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/experiences?${stringifiedParams}`
+    : `/api/experiences`;
+};
+
+export const listExperiences = async (
+  params?: ListExperiencesParams,
+  options?: RequestInit,
+): Promise<ExperienceList> => {
+  return customFetch<ExperienceList>(getListExperiencesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListExperiencesQueryKey = (params?: ListExperiencesParams) => {
+  return [`/api/experiences`, ...(params ? [params] : [])] as const;
+};
+
+export const getListExperiencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listExperiences>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExperiencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExperiences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListExperiencesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listExperiences>>> = ({
+    signal,
+  }) => listExperiences(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listExperiences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListExperiencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listExperiences>>
+>;
+export type ListExperiencesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List experiences
+ */
+
+export function useListExperiences<
+  TData = Awaited<ReturnType<typeof listExperiences>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListExperiencesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listExperiences>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListExperiencesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Creates a new experience. Requires authentication.
+ * @summary Create a new experience
+ */
+export const getCreateExperienceUrl = () => {
+  return `/api/experiences`;
+};
+
+export const createExperience = async (
+  createExperienceRequest: CreateExperienceRequest,
+  options?: RequestInit,
+): Promise<ExperienceDetail> => {
+  return customFetch<ExperienceDetail>(getCreateExperienceUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createExperienceRequest),
+  });
+};
+
+export const getCreateExperienceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExperience>>,
+    TError,
+    { data: BodyType<CreateExperienceRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createExperience>>,
+  TError,
+  { data: BodyType<CreateExperienceRequest> },
+  TContext
+> => {
+  const mutationKey = ["createExperience"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createExperience>>,
+    { data: BodyType<CreateExperienceRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createExperience(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateExperienceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createExperience>>
+>;
+export type CreateExperienceMutationBody = BodyType<CreateExperienceRequest>;
+export type CreateExperienceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a new experience
+ */
+export const useCreateExperience = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createExperience>>,
+    TError,
+    { data: BodyType<CreateExperienceRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createExperience>>,
+  TError,
+  { data: BodyType<CreateExperienceRequest> },
+  TContext
+> => {
+  return useMutation(getCreateExperienceMutationOptions(options));
+};
+
+/**
+ * Returns full experience detail including joined status for authenticated users
+ * @summary Get experience detail
+ */
+export const getGetExperienceUrl = (id: number) => {
+  return `/api/experiences/${id}`;
+};
+
+export const getExperience = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ExperienceDetail> => {
+  return customFetch<ExperienceDetail>(getGetExperienceUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetExperienceQueryKey = (id: number) => {
+  return [`/api/experiences/${id}`] as const;
+};
+
+export const getGetExperienceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExperience>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExperience>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetExperienceQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getExperience>>> = ({
+    signal,
+  }) => getExperience(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getExperience>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetExperienceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExperience>>
+>;
+export type GetExperienceQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get experience detail
+ */
+
+export function useGetExperience<
+  TData = Awaited<ReturnType<typeof getExperience>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getExperience>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetExperienceQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Join an experience as a participant
+ * @summary Join an experience
+ */
+export const getJoinExperienceUrl = (id: number) => {
+  return `/api/experiences/${id}/join`;
+};
+
+export const joinExperience = async (
+  id: number,
+  options?: RequestInit,
+): Promise<JoinExperienceResponse> => {
+  return customFetch<JoinExperienceResponse>(getJoinExperienceUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getJoinExperienceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinExperience>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof joinExperience>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["joinExperience"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof joinExperience>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return joinExperience(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type JoinExperienceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof joinExperience>>
+>;
+
+export type JoinExperienceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Join an experience
+ */
+export const useJoinExperience = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof joinExperience>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof joinExperience>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getJoinExperienceMutationOptions(options));
+};
+
+/**
+ * Mark an experience as completed for the current user. Awards XP.
+ * @summary Mark experience as complete
+ */
+export const getCompleteExperienceUrl = (id: number) => {
+  return `/api/experiences/${id}/complete`;
+};
+
+export const completeExperience = async (
+  id: number,
+  options?: RequestInit,
+): Promise<CompleteExperienceResponse> => {
+  return customFetch<CompleteExperienceResponse>(getCompleteExperienceUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCompleteExperienceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeExperience>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeExperience>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["completeExperience"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeExperience>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return completeExperience(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteExperienceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeExperience>>
+>;
+
+export type CompleteExperienceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Mark experience as complete
+ */
+export const useCompleteExperience = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeExperience>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeExperience>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getCompleteExperienceMutationOptions(options));
+};
 
 /**
  * Receives updates from Telegram bot

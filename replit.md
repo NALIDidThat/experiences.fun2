@@ -51,16 +51,26 @@ artifacts-monorepo/
 5. Profile — name, @username, optional bio (Telegram pre-fill if in Mini App)
 6. Completion — +50 XP celebration, 3 experience previews, "Explore" CTA
 
+### Experiences
+- **Discovery page** (/home) — list all experiences, filter by type (personal/professional), category, auto-filter by user's city when logged in
+- **Experience detail** (/experience/:id) — full details, join button, complete button (host-only), participant list
+- **Create experience** (/create) — 6-step form (title, description, type, category, date+location, review)
+- **Join flow** — participants join experiences, host marks as completed, XP awarded to all participants
+- **XP rewards** — default 100 XP per experience, configurable by host
+
 ### User Profile (/u/:username)
 - Avatar (initials fallback), name, @username, city, bio
 - XP total with level bar (500 XP per level)
-- Upvote count
-- Two tabs: Personal / Professional experiences
+- Level labels: Explorer (1), Contributor (2), Champion (3), Leader (4), Legend (5+)
+- Upvote count + upvote toggle button on other users' profiles
+- Two tabs: Personal / Professional experiences with role (hosted/joined) and XP earned
 
 ### Telegram Integration
 - Bot menu button opens the web app
 - /start → onboarding or home (if registered)
 - /me → shows profile info
+- /explore → top 3 experiences near user's city with deep links
+- /create → deep link to create experience form
 - Webhook at POST /api/telegram/webhook
 - Bot setup runs on server start (requires MINI_APP_URL env var)
 
@@ -75,6 +85,21 @@ artifacts-monorepo/
 - id (serial PK), telegram_id (unique, nullable), name, username (unique)
 - city, country, interests (text[]), role (join|host|both), bio (nullable)
 - xp (default 0), upvote_count (default 0), session_token, created_at
+
+### experiences table
+- id (serial PK), title, description, type (personal|professional), category
+- date, city, country, xp_reward (default 100), max_participants (nullable)
+- participant_count (default 0), status (active|completed|cancelled)
+- creator_id (FK → users), created_at
+
+### experience_participants table
+- id (serial PK), experience_id (FK → experiences), user_id (FK → users)
+- status (joined|completed), xp_earned (default 0), joined_at
+- Unique constraint on (experience_id, user_id)
+
+### upvotes table
+- id (serial PK), from_user_id (FK → users), to_user_id (FK → users), created_at
+- Unique constraint on (from_user_id, to_user_id)
 
 ## Authentication
 
@@ -96,8 +121,14 @@ artifacts-monorepo/
 - `GET /api/healthz` — health check
 - `POST /api/onboarding/complete` — complete onboarding, create/update user, award 50 XP
 - `GET /api/users/me` — get current user profile (requires Bearer token)
-- `GET /api/users/:username` — get user profile by username
+- `GET /api/users/:username` — get user profile with experience arrays + has_upvoted flag
 - `GET /api/users/check-username/:username` — check username availability
+- `POST /api/users/:username/upvote` — toggle upvote on a user
+- `GET /api/experiences` — list experiences with optional filters (type, category, city)
+- `POST /api/experiences` — create a new experience (auth required)
+- `GET /api/experiences/:id` — get experience detail with creator info + join status
+- `POST /api/experiences/:id/join` — join an experience (auth required)
+- `POST /api/experiences/:id/complete` — mark experience completed, award XP (host only)
 - `POST /api/telegram/webhook` — Telegram bot webhook
 
 ## Environment Variables
@@ -130,7 +161,7 @@ React + Vite frontend at root path `/`. Uses wouter for routing, Framer Motion f
 
 Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for validation and `@workspace/db` for persistence. Sets up Telegram bot webhook on start.
 
-- Routes: health, onboarding, users, telegram
+- Routes: health, onboarding, users, experiences, telegram
 - Entry: `src/index.ts` — reads `PORT`, starts Express, calls `setupTelegramBot()`
 
 ### `lib/db` (`@workspace/db`)

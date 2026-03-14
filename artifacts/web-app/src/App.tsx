@@ -4,10 +4,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
-// Import pages
 import Onboarding from "./pages/Onboarding";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import ExperienceDetail from "./pages/ExperienceDetail";
+import CreateExperience from "./pages/CreateExperience";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,8 @@ function Router() {
       <Route path="/" component={Onboarding} />
       <Route path="/home" component={Home} />
       <Route path="/u/:username" component={Profile} />
+      <Route path="/experience/:id" component={ExperienceDetail} />
+      <Route path="/create" component={CreateExperience} />
       <Route component={NotFound} />
     </Switch>
   );

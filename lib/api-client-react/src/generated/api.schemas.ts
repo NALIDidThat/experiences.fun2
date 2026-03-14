@@ -68,14 +68,207 @@ export interface OnboardingResponse {
   session_token: string;
 }
 
+export type UserExperienceCardType =
+  (typeof UserExperienceCardType)[keyof typeof UserExperienceCardType];
+
+export const UserExperienceCardType = {
+  personal: "personal",
+  professional: "professional",
+} as const;
+
+export type UserExperienceCardRole =
+  (typeof UserExperienceCardRole)[keyof typeof UserExperienceCardRole];
+
+export const UserExperienceCardRole = {
+  hosted: "hosted",
+  joined: "joined",
+} as const;
+
+export type UserExperienceCardStatus =
+  (typeof UserExperienceCardStatus)[keyof typeof UserExperienceCardStatus];
+
+export const UserExperienceCardStatus = {
+  joined: "joined",
+  completed: "completed",
+} as const;
+
+export interface UserExperienceCard {
+  id: number;
+  title: string;
+  type: UserExperienceCardType;
+  category: string;
+  role: UserExperienceCardRole;
+  status: UserExperienceCardStatus;
+  xp_earned: number;
+  date: string;
+  city: string;
+}
+
+export interface UserProfileFull {
+  id: number;
+  name: string;
+  username: string;
+  city: string;
+  country: string;
+  interests: string[];
+  role: string;
+  bio?: string | null;
+  xp: number;
+  upvote_count: number;
+  has_upvoted: boolean;
+  created_at: string;
+  personal_experiences: UserExperienceCard[];
+  professional_experiences: UserExperienceCard[];
+}
+
 export interface UsernameAvailability {
   available: boolean;
   username: string;
+}
+
+export interface UpvoteResponse {
+  upvoted: boolean;
+  upvote_count: number;
+}
+
+export type ExperienceCardType =
+  (typeof ExperienceCardType)[keyof typeof ExperienceCardType];
+
+export const ExperienceCardType = {
+  personal: "personal",
+  professional: "professional",
+} as const;
+
+export interface ExperienceCard {
+  id: number;
+  title: string;
+  type: ExperienceCardType;
+  category: string;
+  date: string;
+  city: string;
+  xp_reward: number;
+  participant_count: number;
+  max_participants?: number | null;
+  creator_name: string;
+  creator_username: string;
+  status: string;
+}
+
+export interface ExperienceList {
+  experiences: ExperienceCard[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export type ExperienceDetailType =
+  (typeof ExperienceDetailType)[keyof typeof ExperienceDetailType];
+
+export const ExperienceDetailType = {
+  personal: "personal",
+  professional: "professional",
+} as const;
+
+export interface ExperienceCreator {
+  id: number;
+  name: string;
+  username: string;
+}
+
+export interface ExperienceDetail {
+  id: number;
+  title: string;
+  description: string;
+  type: ExperienceDetailType;
+  category: string;
+  date: string;
+  city: string;
+  country: string;
+  xp_reward: number;
+  max_participants?: number | null;
+  participant_count: number;
+  status: string;
+  creator: ExperienceCreator;
+  joined: boolean;
+  participation_status?: string | null;
+  created_at: string;
+}
+
+export type CreateExperienceRequestType =
+  (typeof CreateExperienceRequestType)[keyof typeof CreateExperienceRequestType];
+
+export const CreateExperienceRequestType = {
+  personal: "personal",
+  professional: "professional",
+} as const;
+
+export interface CreateExperienceRequest {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title: string;
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  description: string;
+  type: CreateExperienceRequestType;
+  /** @minLength 1 */
+  category: string;
+  /** @minLength 1 */
+  date: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  city: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  country: string;
+  /** @minimum 2 */
+  max_participants?: number | null;
+  /**
+   * @minimum 10
+   * @maximum 500
+   */
+  xp_reward?: number;
+}
+
+export interface JoinExperienceResponse {
+  success: boolean;
+  participant_count: number;
+}
+
+export interface CompleteExperienceResponse {
+  success: boolean;
+  xp_earned: number;
+  total_xp: number;
 }
 
 export interface ErrorResponse {
   error: string;
   message: string;
 }
+
+export type ListExperiencesParams = {
+  city?: string;
+  type?: ListExperiencesType;
+  category?: string;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+};
+
+export type ListExperiencesType =
+  (typeof ListExperiencesType)[keyof typeof ListExperiencesType];
+
+export const ListExperiencesType = {
+  personal: "personal",
+  professional: "professional",
+} as const;
 
 export type TelegramWebhookBody = { [key: string]: unknown };

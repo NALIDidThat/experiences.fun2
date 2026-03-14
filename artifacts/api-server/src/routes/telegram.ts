@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import { usersTable, experiencesTable } from "@workspace/db";
 import { getWebhookSecretToken, verifyWebhookRequest } from "../lib/telegram-auth";
 
 const router: IRouter = Router();
@@ -67,11 +67,80 @@ router.post("/telegram/webhook", async (req: Request, res: Response): Promise<vo
           "Sign Up", miniAppUrl || undefined
         );
       }
+    } else if (text === "/explore") {
+      const [user] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.telegram_id, telegramId))
+        .limit(1);
+
+      const cityFilter = user ? eq(experiencesTable.city, user.city) : undefined;
+
+      const experiences = await db
+        .select({
+          id: experiencesTable.id,
+          title: experiencesTable.title,
+          type: experiencesTable.type,
+          category: experiencesTable.category,
+          date: experiencesTable.date,
+          city: experiencesTable.city,
+          xp_reward: experiencesTable.xp_reward,
+        })
+        .from(experiencesTable)
+        .where(cityFilter)
+        .orderBy(desc(experiencesTable.created_at))
+        .limit(3);
+
+      if (experiences.length === 0) {
+        await sendTelegramMessage(botToken, chatId,
+          user
+            ? `No experiences found near ${user.city} yet. Be the first to create one! 🚀`
+            : "No experiences found yet. Sign up and create one! 🚀"
+        );
+      } else {
+        let message = user
+          ? `🌍 Top experiences near ${user.city}:\n\n`
+          : "🌍 Latest experiences:\n\n";
+
+        const inlineKeyboard: Array<Array<{ text: string; web_app?: { url: string } }>> = [];
+
+        for (const exp of experiences) {
+          const typeEmoji = exp.type === "personal" ? "🌟" : "💼";
+          message += `${typeEmoji} **${exp.title}**\n📍 ${exp.city} · 📅 ${exp.date} · ⭐ +${exp.xp_reward} XP\n\n`;
+
+          if (miniAppUrl) {
+            inlineKeyboard.push([{
+              text: `View "${exp.title}" →`,
+              web_app: { url: `${miniAppUrl}/experience/${exp.id}` },
+            }]);
+          }
+        }
+
+        await sendTelegramMessageWithInlineKeyboard(botToken, chatId, message, inlineKeyboard);
+      }
+    } else if (text === "/create") {
+      await sendTelegramMessageWithWebApp(
+        botToken, chatId,
+        "Ready to create a new experience? 🎉\n\nTap below to set it up!",
+        "Create Experience", miniAppUrl ? `${miniAppUrl}/create` : undefined
+      );
     }
   }
 
   res.json({ ok: true });
 });
+
+async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
+    });
+  } catch (e) {
+    console.error("Failed to send Telegram message:", e);
+  }
+}
 
 async function sendTelegramMessageWithWebApp(
   botToken: string, chatId: number, text: string,
@@ -87,6 +156,31 @@ async function sendTelegramMessageWithWebApp(
           web_app: { url: webAppUrl }
         }]]
       };
+    }
+
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    console.error("Failed to send Telegram message:", e);
+  }
+}
+
+async function sendTelegramMessageWithInlineKeyboard(
+  botToken: string, chatId: number, text: string,
+  inlineKeyboard: Array<Array<{ text: string; web_app?: { url: string } }>>
+) {
+  try {
+    const body: Record<string, unknown> = {
+      chat_id: chatId,
+      text,
+      parse_mode: "Markdown",
+    };
+
+    if (inlineKeyboard.length > 0) {
+      body.reply_markup = { inline_keyboard: inlineKeyboard };
     }
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -137,6 +231,19 @@ export async function setupTelegramBot() {
     });
     const menuData = await menuRes.json();
     console.log("Telegram menu button set:", menuData);
+
+    await fetch(`https://api.telegram.org/bot${botToken}/setMyCommands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        commands: [
+          { command: "start", description: "Start the bot" },
+          { command: "explore", description: "Discover nearby experiences" },
+          { command: "create", description: "Create a new experience" },
+          { command: "me", description: "View your profile" },
+        ],
+      }),
+    });
   } catch (e) {
     console.error("Failed to setup Telegram bot:", e);
   }

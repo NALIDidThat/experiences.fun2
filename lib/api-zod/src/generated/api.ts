@@ -83,8 +83,8 @@ export const GetCurrentUserResponse = zod.object({
 });
 
 /**
- * Returns a user profile by username
- * @summary Get user profile
+ * Returns a user profile with personal and professional experience arrays
+ * @summary Get user profile with experience history
  */
 export const getUserProfilePathUsernameMin = 3;
 
@@ -108,7 +108,34 @@ export const GetUserProfileResponse = zod.object({
   bio: zod.string().nullish(),
   xp: zod.number(),
   upvote_count: zod.number(),
+  has_upvoted: zod.boolean(),
   created_at: zod.string(),
+  personal_experiences: zod.array(
+    zod.object({
+      id: zod.number(),
+      title: zod.string(),
+      type: zod.enum(["personal", "professional"]),
+      category: zod.string(),
+      role: zod.enum(["hosted", "joined"]),
+      status: zod.enum(["joined", "completed"]),
+      xp_earned: zod.number(),
+      date: zod.string(),
+      city: zod.string(),
+    }),
+  ),
+  professional_experiences: zod.array(
+    zod.object({
+      id: zod.number(),
+      title: zod.string(),
+      type: zod.enum(["personal", "professional"]),
+      category: zod.string(),
+      role: zod.enum(["hosted", "joined"]),
+      status: zod.enum(["joined", "completed"]),
+      xp_earned: zod.number(),
+      date: zod.string(),
+      city: zod.string(),
+    }),
+  ),
 });
 
 /**
@@ -129,6 +156,150 @@ export const CheckUsernameParams = zod.object({
 export const CheckUsernameResponse = zod.object({
   available: zod.boolean(),
   username: zod.string(),
+});
+
+/**
+ * Toggles an upvote on the target user. One upvote per user pair.
+ * @summary Toggle upvote on a user
+ */
+export const toggleUpvotePathUsernameMin = 3;
+
+export const ToggleUpvoteParams = zod.object({
+  username: zod.coerce.string().min(toggleUpvotePathUsernameMin),
+});
+
+export const ToggleUpvoteResponse = zod.object({
+  upvoted: zod.boolean(),
+  upvote_count: zod.number(),
+});
+
+/**
+ * Returns a paginated list of experiences with optional filters
+ * @summary List experiences
+ */
+export const listExperiencesQueryPageDefault = 1;
+
+export const ListExperiencesQueryParams = zod.object({
+  city: zod.coerce.string().optional(),
+  type: zod.enum(["personal", "professional"]).optional(),
+  category: zod.coerce.string().optional(),
+  page: zod.coerce.number().min(1).default(listExperiencesQueryPageDefault),
+});
+
+export const ListExperiencesResponse = zod.object({
+  experiences: zod.array(
+    zod.object({
+      id: zod.number(),
+      title: zod.string(),
+      type: zod.enum(["personal", "professional"]),
+      category: zod.string(),
+      date: zod.string(),
+      city: zod.string(),
+      xp_reward: zod.number(),
+      participant_count: zod.number(),
+      max_participants: zod.number().nullish(),
+      creator_name: zod.string(),
+      creator_username: zod.string(),
+      status: zod.string(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  page_size: zod.number(),
+});
+
+/**
+ * Creates a new experience. Requires authentication.
+ * @summary Create a new experience
+ */
+export const createExperienceBodyTitleMax = 200;
+
+export const createExperienceBodyDescriptionMax = 2000;
+
+export const createExperienceBodyCityMax = 100;
+
+export const createExperienceBodyCountryMax = 100;
+
+export const createExperienceBodyMaxParticipantsMin = 2;
+
+export const createExperienceBodyXpRewardMin = 10;
+export const createExperienceBodyXpRewardMax = 500;
+
+export const CreateExperienceBody = zod.object({
+  title: zod.string().min(1).max(createExperienceBodyTitleMax),
+  description: zod.string().min(1).max(createExperienceBodyDescriptionMax),
+  type: zod.enum(["personal", "professional"]),
+  category: zod.string().min(1),
+  date: zod.string().min(1),
+  city: zod.string().min(1).max(createExperienceBodyCityMax),
+  country: zod.string().min(1).max(createExperienceBodyCountryMax),
+  max_participants: zod
+    .number()
+    .min(createExperienceBodyMaxParticipantsMin)
+    .nullish(),
+  xp_reward: zod
+    .number()
+    .min(createExperienceBodyXpRewardMin)
+    .max(createExperienceBodyXpRewardMax)
+    .optional(),
+});
+
+/**
+ * Returns full experience detail including joined status for authenticated users
+ * @summary Get experience detail
+ */
+export const GetExperienceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetExperienceResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  description: zod.string(),
+  type: zod.enum(["personal", "professional"]),
+  category: zod.string(),
+  date: zod.string(),
+  city: zod.string(),
+  country: zod.string(),
+  xp_reward: zod.number(),
+  max_participants: zod.number().nullish(),
+  participant_count: zod.number(),
+  status: zod.string(),
+  creator: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    username: zod.string(),
+  }),
+  joined: zod.boolean(),
+  participation_status: zod.string().nullish(),
+  created_at: zod.string(),
+});
+
+/**
+ * Join an experience as a participant
+ * @summary Join an experience
+ */
+export const JoinExperienceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const JoinExperienceResponse = zod.object({
+  success: zod.boolean(),
+  participant_count: zod.number(),
+});
+
+/**
+ * Mark an experience as completed for the current user. Awards XP.
+ * @summary Mark experience as complete
+ */
+export const CompleteExperienceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CompleteExperienceResponse = zod.object({
+  success: zod.boolean(),
+  xp_earned: zod.number(),
+  total_xp: zod.number(),
 });
 
 /**
