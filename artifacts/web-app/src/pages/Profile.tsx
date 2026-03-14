@@ -37,9 +37,10 @@ export default function Profile() {
     request: { headers: getAuthHeaders() },
   });
 
-  const otherQuery = { enabled: !isMe && !!username, retry: false as const };
-  const otherResult = useGetUserProfile(isMe ? "_" : username, {
-    query: otherQuery as typeof otherQuery & { queryKey: readonly unknown[] },
+  const resolvedUsername = isMe ? (meResult.data?.username || "_") : username;
+  const profileQuery = { enabled: isMe ? !!meResult.data?.username : !!username, retry: false as const };
+  const profileResult = useGetUserProfile(resolvedUsername, {
+    query: profileQuery as typeof profileQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() },
   });
 
@@ -47,10 +48,9 @@ export default function Profile() {
     request: { headers: getAuthHeaders() },
   });
 
-  const profile = isMe ? meResult.data : otherResult.data;
-  const fullProfile = !isMe ? otherResult.data : null;
-  const isLoading = isMe ? meResult.isLoading : otherResult.isLoading;
-  const error = isMe ? meResult.error : otherResult.error;
+  const profile = profileResult.data;
+  const isLoading = isMe ? (meResult.isLoading || (meResult.data && profileResult.isLoading)) : profileResult.isLoading;
+  const error = isMe ? (meResult.error || profileResult.error) : profileResult.error;
 
   const [activeTab, setActiveTab] = useState<"personal" | "professional">("personal");
 
@@ -99,8 +99,8 @@ export default function Profile() {
   const progressPercent = (xpInCurrentLevel / 500) * 100;
   const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const personalExperiences = fullProfile?.personal_experiences || [];
-  const professionalExperiences = fullProfile?.professional_experiences || [];
+  const personalExperiences = profile?.personal_experiences || [];
+  const professionalExperiences = profile?.professional_experiences || [];
   const tabExperiences = activeTab === "personal" ? personalExperiences : professionalExperiences;
 
   return (
@@ -148,18 +148,18 @@ export default function Profile() {
                     )}
                     {!isMe && isAuthenticated() && (
                       <Button
-                        variant={fullProfile?.has_upvoted ? "default" : "outline"}
+                        variant={profile?.has_upvoted ? "default" : "outline"}
                         onClick={handleUpvote}
                         disabled={upvoteMutation.isPending}
                         className={cn(
                           "rounded-xl",
-                          fullProfile?.has_upvoted
+                          profile?.has_upvoted
                             ? "bg-primary hover:bg-primary/90"
                             : "border-gray-200 text-gray-700 hover:bg-gray-50"
                         )}
                       >
                         <ThumbsUp className="w-4 h-4 mr-2" />
-                        {fullProfile?.has_upvoted ? "Upvoted" : "Upvote"}
+                        {profile?.has_upvoted ? "Upvoted" : "Upvote"}
                       </Button>
                     )}
                   </div>

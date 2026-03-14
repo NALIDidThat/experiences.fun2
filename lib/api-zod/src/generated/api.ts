@@ -181,6 +181,7 @@ export const listExperiencesQueryPageDefault = 1;
 
 export const ListExperiencesQueryParams = zod.object({
   city: zod.coerce.string().optional(),
+  country: zod.coerce.string().optional(),
   type: zod.enum(["personal", "professional"]).optional(),
   category: zod.coerce.string().optional(),
   page: zod.coerce.number().min(1).default(listExperiencesQueryPageDefault),

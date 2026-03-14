@@ -81,6 +81,7 @@ router.get("/users/:username", async (req: Request, res: Response): Promise<void
       category: experiencesTable.category,
       date: experiencesTable.date,
       city: experiencesTable.city,
+      status: experiencesTable.status,
       xp_reward: experiencesTable.xp_reward,
     })
     .from(experiencesTable)
@@ -108,7 +109,7 @@ router.get("/users/:username", async (req: Request, res: Response): Promise<void
       type: e.type,
       category: e.category,
       role: "hosted" as const,
-      status: "completed" as const,
+      status: e.status as "joined" | "completed",
       xp_earned: 0,
       date: e.date,
       city: e.city,

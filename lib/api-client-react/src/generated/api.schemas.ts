@@ -255,6 +255,7 @@ export interface ErrorResponse {
 
 export type ListExperiencesParams = {
   city?: string;
+  country?: string;
   type?: ListExperiencesType;
   category?: string;
   /**

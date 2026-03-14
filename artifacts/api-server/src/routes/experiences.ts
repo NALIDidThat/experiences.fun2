@@ -25,11 +25,12 @@ router.get("/experiences", async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const { city, type, category, page = 1 } = query.data;
+  const { city, country, type, category, page = 1 } = query.data;
   const offset = (page - 1) * PAGE_SIZE;
 
   const conditions = [eq(experiencesTable.status, "active")];
   if (city) conditions.push(eq(experiencesTable.city, city));
+  if (country) conditions.push(eq(experiencesTable.country, country));
   if (type) conditions.push(eq(experiencesTable.type, type));
   if (category) conditions.push(eq(experiencesTable.category, category));
 

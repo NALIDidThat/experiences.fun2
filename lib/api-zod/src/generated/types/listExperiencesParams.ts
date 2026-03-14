@@ -9,6 +9,7 @@ import type { ListExperiencesType } from "./listExperiencesType";
 
 export type ListExperiencesParams = {
   city?: string;
+  country?: string;
   type?: ListExperiencesType;
   category?: string;
   /**

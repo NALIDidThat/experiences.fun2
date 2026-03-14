@@ -161,6 +161,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: country
+          in: query
+          schema:
+            type: string
         - name: type
           in: query
           schema:
