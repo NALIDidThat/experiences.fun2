@@ -20,12 +20,31 @@ export const OnboardingRequestRole = {
 
 export interface OnboardingRequest {
   telegram_id?: string | null;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
   name: string;
+  /**
+   * @minLength 3
+   * @maxLength 30
+   * @pattern ^[a-z0-9_]+$
+   */
   username: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
   city: string;
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
   country: string;
+  /** @minItems 1 */
   interests: string[];
   role: OnboardingRequestRole;
+  /** @maxLength 500 */
   bio?: string | null;
 }
 

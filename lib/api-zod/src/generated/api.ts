@@ -19,15 +19,31 @@ export const HealthCheckResponse = zod.object({
  * Creates or updates a user profile from onboarding data and awards 50 XP
  * @summary Complete user onboarding
  */
+export const completeOnboardingBodyNameMax = 100;
+
+export const completeOnboardingBodyUsernameMin = 3;
+export const completeOnboardingBodyUsernameMax = 30;
+
+export const completeOnboardingBodyUsernameRegExp = new RegExp("^[a-z0-9_]+$");
+export const completeOnboardingBodyCityMax = 100;
+
+export const completeOnboardingBodyCountryMax = 100;
+
+export const completeOnboardingBodyBioMax = 500;
+
 export const CompleteOnboardingBody = zod.object({
   telegram_id: zod.string().nullish(),
-  name: zod.string(),
-  username: zod.string(),
-  city: zod.string(),
-  country: zod.string(),
-  interests: zod.array(zod.string()),
+  name: zod.string().min(1).max(completeOnboardingBodyNameMax),
+  username: zod
+    .string()
+    .min(completeOnboardingBodyUsernameMin)
+    .max(completeOnboardingBodyUsernameMax)
+    .regex(completeOnboardingBodyUsernameRegExp),
+  city: zod.string().min(1).max(completeOnboardingBodyCityMax),
+  country: zod.string().min(1).max(completeOnboardingBodyCountryMax),
+  interests: zod.array(zod.string().min(1)).min(1),
   role: zod.enum(["join", "host", "both"]),
-  bio: zod.string().nullish(),
+  bio: zod.string().max(completeOnboardingBodyBioMax).nullish(),
 });
 
 export const CompleteOnboardingResponse = zod.object({
@@ -70,8 +86,15 @@ export const GetCurrentUserResponse = zod.object({
  * Returns a user profile by username
  * @summary Get user profile
  */
+export const getUserProfilePathUsernameMin = 3;
+
+export const getUserProfilePathUsernameRegExp = new RegExp("^[a-z0-9_]+$");
+
 export const GetUserProfileParams = zod.object({
-  username: zod.coerce.string(),
+  username: zod.coerce
+    .string()
+    .min(getUserProfilePathUsernameMin)
+    .regex(getUserProfilePathUsernameRegExp),
 });
 
 export const GetUserProfileResponse = zod.object({
@@ -92,8 +115,15 @@ export const GetUserProfileResponse = zod.object({
  * Returns whether a username is available
  * @summary Check username availability
  */
+export const checkUsernamePathUsernameMin = 3;
+
+export const checkUsernamePathUsernameRegExp = new RegExp("^[a-z0-9_]+$");
+
 export const CheckUsernameParams = zod.object({
-  username: zod.coerce.string(),
+  username: zod.coerce
+    .string()
+    .min(checkUsernamePathUsernameMin)
+    .regex(checkUsernamePathUsernameRegExp),
 });
 
 export const CheckUsernameResponse = zod.object({

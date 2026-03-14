@@ -86,6 +86,8 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 3
+            pattern: "^[a-z0-9_]+$"
       responses:
         "200":
           description: User profile
@@ -111,6 +113,8 @@ paths:
           required: true
           schema:
             type: string
+            minLength: 3
+            pattern: "^[a-z0-9_]+$"
       responses:
         "200":
           description: Username availability
@@ -150,21 +154,33 @@ components:
           nullable: true
         name:
           type: string
+          minLength: 1
+          maxLength: 100
         username:
           type: string
+          minLength: 3
+          maxLength: 30
+          pattern: "^[a-z0-9_]+$"
         city:
           type: string
+          minLength: 1
+          maxLength: 100
         country:
           type: string
+          minLength: 1
+          maxLength: 100
         interests:
           type: array
           items:
             type: string
+            minLength: 1
+          minItems: 1
         role:
           type: string
           enum: [join, host, both]
         bio:
           type: string
+          maxLength: 500
           nullable: true
       required:
         - name

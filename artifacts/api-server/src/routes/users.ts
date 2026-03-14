@@ -18,18 +18,16 @@ router.get("/users/check-username/:username", async (req: Request, res: Response
     return;
   }
 
-  const raw = Array.isArray(params.data.username) ? params.data.username[0] : params.data.username;
-
   const existing = await db
     .select({ id: usersTable.id })
     .from(usersTable)
-    .where(eq(usersTable.username, raw))
+    .where(eq(usersTable.username, params.data.username))
     .limit(1);
 
   res.json(
     CheckUsernameResponse.parse({
       available: existing.length === 0,
-      username: raw,
+      username: params.data.username,
     })
   );
 });
@@ -65,12 +63,10 @@ router.get("/users/:username", async (req: Request, res: Response): Promise<void
     return;
   }
 
-  const raw = Array.isArray(params.data.username) ? params.data.username[0] : params.data.username;
-
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.username, raw))
+    .where(eq(usersTable.username, params.data.username))
     .limit(1);
 
   if (!user) {
