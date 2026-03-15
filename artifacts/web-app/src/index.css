@@ -48,7 +48,6 @@
 }
 
 :root {
-  /* Playful, vibrant purple-blue to indigo theme */
   --background: 240 20% 99%;
   --foreground: 240 10% 15%;
   
@@ -60,18 +59,18 @@
   --popover-foreground: 240 10% 15%;
   --popover-border: 240 10% 90%;
   
-  /* Primary: Indigo / Vibrant Purple */
-  --primary: 243 75% 59%;
+  /* Primary: #f20789 */
+  --primary: 330 94% 49%;
   --primary-foreground: 0 0% 100%;
   
-  /* Secondary: Soft lavender */
-  --secondary: 243 70% 95%;
-  --secondary-foreground: 243 75% 45%;
+  /* Secondary: Soft pink tint */
+  --secondary: 330 80% 96%;
+  --secondary-foreground: 330 94% 38%;
   
   --muted: 240 10% 96%;
   --muted-foreground: 240 5% 45%;
   
-  --accent: 270 80% 65%;
+  --accent: 330 70% 60%;
   --accent-foreground: 0 0% 100%;
   
   --destructive: 0 84% 60%;
@@ -79,7 +78,7 @@
   
   --border: 240 10% 90%;
   --input: 240 10% 90%;
-  --ring: 243 75% 59%;
+  --ring: 330 94% 49%;
   
   --radius: 0.75rem;
 

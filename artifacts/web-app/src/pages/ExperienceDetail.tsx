@@ -84,7 +84,7 @@ export default function ExperienceDetail() {
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pb-24">
-        <div className="h-40 bg-gradient-to-r from-primary via-purple-500 to-fuchsia-500 relative">
+        <div className="h-40 bg-gradient-to-r from-primary via-pink-500 to-rose-500 relative">
           <button
             onClick={() => setLocation("/home")}
             className="absolute top-4 left-4 bg-white/20 backdrop-blur-md text-white rounded-full p-2.5 hover:bg-white/30 transition-colors"

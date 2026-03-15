@@ -120,11 +120,11 @@ export default function CreateExperience() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 flex flex-col items-center justify-end md:justify-center overflow-hidden font-sans relative">
+    <div className="min-h-[100dvh] w-full bg-gradient-to-br from-pink-600 via-primary to-rose-600 flex flex-col items-center justify-end md:justify-center overflow-hidden font-sans relative">
       <FloatingEmojis step={step} />
 
-      <div className="w-full max-w-md md:rounded-[2rem] rounded-t-[2.5rem] bg-white shadow-2xl relative z-10 flex flex-col h-[75dvh] md:h-[650px] overflow-hidden">
-        <div className="absolute top-0 left-0 w-full p-6 z-20 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-50/50">
+      <div className="w-full max-w-md md:rounded-[2rem] rounded-t-[2.5rem] bg-white shadow-2xl relative z-10 flex flex-col h-[80dvh] md:h-[650px] overflow-hidden">
+        <div className="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-50/50">
           {step > 1 ? (
             <button
               onClick={prevStep}
@@ -155,7 +155,7 @@ export default function CreateExperience() {
           <div className="w-10" />
         </div>
 
-        <div className="flex-1 relative mt-20">
+        <div className="flex-1 relative mt-16 md:mt-20">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={step}

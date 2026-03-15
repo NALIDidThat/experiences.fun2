@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp } from "lucide-react";
+import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp, Star, Users } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useGetUserProfile, useGetCurrentUser, useToggleUpvote } from "@workspace/api-client-react";
@@ -52,8 +51,6 @@ export default function Profile() {
   const isLoading = isMe ? (meResult.isLoading || (meResult.data && profileResult.isLoading)) : profileResult.isLoading;
   const error = isMe ? (meResult.error || profileResult.error) : profileResult.error;
 
-  const [activeTab, setActiveTab] = useState<"personal" | "professional">("personal");
-
   const handleUpvote = () => {
     if (!profile) return;
     upvoteMutation.mutate(
@@ -100,14 +97,17 @@ export default function Profile() {
   const progressPercent = (xpInCurrentLevel / 500) * 100;
   const initials = profile.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const personalExperiences = profile?.personal_experiences || [];
-  const professionalExperiences = profile?.professional_experiences || [];
-  const tabExperiences = activeTab === "personal" ? personalExperiences : professionalExperiences;
+  const allExperiences = [
+    ...(profile?.personal_experiences || []),
+    ...(profile?.professional_experiences || []),
+  ];
+  const hostedExperiences = allExperiences.filter(e => e.role === "hosted");
+  const joinedExperiences = allExperiences.filter(e => e.role === "joined");
 
   return (
     <Layout>
       <div className="min-h-screen bg-gray-50 pb-24">
-        <div className="h-48 bg-gradient-to-r from-primary via-purple-500 to-fuchsia-500 relative">
+        <div className="h-48 bg-gradient-to-r from-primary via-pink-500 to-rose-500 relative">
           <div className="absolute inset-0 bg-black/10" />
         </div>
 
@@ -183,7 +183,7 @@ export default function Profile() {
                     </div>
                     <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-primary to-fuchsia-500 rounded-full transition-all duration-1000 ease-out"
+                        className="h-full bg-gradient-to-r from-primary to-rose-400 rounded-full transition-all duration-1000 ease-out"
                         style={{ width: `${Math.max(5, progressPercent)}%` }}
                       />
                     </div>
@@ -209,90 +209,150 @@ export default function Profile() {
             </div>
           </div>
 
-          <div>
-            <div className="flex p-1 bg-gray-200/50 rounded-2xl w-full sm:w-auto inline-flex mb-6">
-              <button
-                onClick={() => setActiveTab("personal")}
-                className={cn(
-                  "flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  activeTab === "personal" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                Personal ({personalExperiences.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("professional")}
-                className={cn(
-                  "flex-1 sm:px-8 py-2.5 rounded-xl text-sm font-bold transition-all",
-                  activeTab === "professional" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                Professional ({professionalExperiences.length})
-              </button>
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-primary" />
+                </div>
+                <h2 className="text-lg font-display font-bold text-gray-900">Experiences Hosted</h2>
+                <span className="text-sm text-gray-400 font-medium ml-auto">{hostedExperiences.length}</span>
+              </div>
+
+              {hostedExperiences.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Star className="w-6 h-6 text-gray-300" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-1">No hosted experiences yet</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {isMe ? "Create your first experience and earn XP!" : "This user hasn't hosted any experiences yet."}
+                  </p>
+                  {isMe && (
+                    <Button
+                      onClick={() => setLocation("/create")}
+                      size="sm"
+                      className="rounded-xl bg-primary hover:bg-primary/90"
+                    >
+                      Create Experience
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {hostedExperiences.map((exp) => (
+                    <button
+                      key={`hosted-${exp.id}`}
+                      onClick={() => setLocation(`/experience/${exp.id}`)}
+                      className="w-full text-left bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-gray-900">{exp.title}</h3>
+                        <span
+                          className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
+                            exp.type === "personal"
+                              ? "bg-blue-50 text-blue-600 border border-blue-100"
+                              : "bg-purple-50 text-purple-600 border border-purple-100"
+                          )}
+                        >
+                          {exp.type === "personal" ? "Personal" : "Professional"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                        <span className="capitalize bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">
+                          {exp.category}
+                        </span>
+                        <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">{exp.date}</span>
+                        <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {exp.city}
+                        </span>
+                        {exp.status === "completed" && (
+                          <span className="font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs">Completed</span>
+                        )}
+                        {exp.status !== "completed" && (
+                          <span className="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs">Active</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {tabExperiences.length === 0 && (
-              <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[300px]">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                  <Calendar className="w-8 h-8 text-gray-300" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} experiences yet</h3>
-                <p className="text-gray-500 max-w-sm mb-6">
-                  {isMe
-                    ? `Join or host a ${activeTab} experience to see it here.`
-                    : `This user hasn't ${activeTab === "personal" ? "joined any personal" : "joined any professional"} experiences yet.`}
-                </p>
-                {isMe && (
-                  <Button
-                    onClick={() => setLocation("/home")}
-                    className="rounded-xl bg-primary hover:bg-primary/90"
-                  >
-                    Explore experiences
-                  </Button>
-                )}
-              </div>
-            )}
+            <div className="border-t border-gray-200" />
 
-            {tabExperiences.length > 0 && (
-              <div className="space-y-3">
-                {tabExperiences.map((exp) => (
-                  <button
-                    key={exp.id}
-                    onClick={() => setLocation(`/experience/${exp.id}`)}
-                    className="w-full text-left bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-bold text-gray-900">{exp.title}</h3>
-                      <span
-                        className={cn(
-                          "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
-                          exp.role === "hosted" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"
-                        )}
-                      >
-                        {exp.role === "hosted" ? "Hosted" : "Joined"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 flex-wrap">
-                      <span className="capitalize bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">
-                        {exp.category}
-                      </span>
-                      <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">{exp.date}</span>
-                      <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {exp.city}
-                      </span>
-                      {exp.status === "completed" && exp.xp_earned > 0 && (
-                        <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
-                          <Trophy className="w-3 h-3" /> +{exp.xp_earned} XP
-                        </span>
-                      )}
-                      {exp.status === "joined" && (
-                        <span className="text-xs font-semibold text-gray-400">In progress</span>
-                      )}
-                    </div>
-                  </button>
-                ))}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-blue-600" />
+                </div>
+                <h2 className="text-lg font-display font-bold text-gray-900">Experiences Joined</h2>
+                <span className="text-sm text-gray-400 font-medium ml-auto">{joinedExperiences.length}</span>
               </div>
-            )}
+
+              {joinedExperiences.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm text-center">
+                  <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-6 h-6 text-gray-300" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-1">No joined experiences yet</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {isMe ? "Discover and join experiences to start earning XP." : "This user hasn't joined any experiences yet."}
+                  </p>
+                  {isMe && (
+                    <Button
+                      onClick={() => setLocation("/home")}
+                      size="sm"
+                      className="rounded-xl bg-primary hover:bg-primary/90"
+                    >
+                      Explore Experiences
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {joinedExperiences.map((exp) => (
+                    <button
+                      key={`joined-${exp.id}`}
+                      onClick={() => setLocation(`/experience/${exp.id}`)}
+                      className="w-full text-left bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-gray-900">{exp.title}</h3>
+                        <span
+                          className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
+                            exp.type === "personal"
+                              ? "bg-blue-50 text-blue-600 border border-blue-100"
+                              : "bg-purple-50 text-purple-600 border border-purple-100"
+                          )}
+                        >
+                          {exp.type === "personal" ? "Personal" : "Professional"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                        <span className="capitalize bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">
+                          {exp.category}
+                        </span>
+                        <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium">{exp.date}</span>
+                        <span className="bg-gray-50 px-2 py-0.5 rounded text-gray-600 font-medium flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {exp.city}
+                        </span>
+                        {exp.status === "completed" && exp.xp_earned > 0 && (
+                          <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+                            <Trophy className="w-3 h-3" /> +{exp.xp_earned} XP
+                          </span>
+                        )}
+                        {exp.status === "joined" && (
+                          <span className="font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded text-xs">In progress</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
