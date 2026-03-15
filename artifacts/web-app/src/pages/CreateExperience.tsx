@@ -164,7 +164,7 @@ export default function CreateExperience() {
               initial="enter"
               animate="center"
               exit="exit"
-              className="absolute inset-0 p-6 md:p-8 flex flex-col overflow-y-auto overflow-x-hidden"
+              className="absolute inset-0 p-4 md:p-8 flex flex-col overflow-y-auto overflow-x-hidden"
             >
               {step === 1 && (
                 <div className="flex flex-col h-full">

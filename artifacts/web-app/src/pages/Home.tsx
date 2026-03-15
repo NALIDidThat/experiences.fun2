@@ -81,7 +81,7 @@ export default function Home() {
           </Button>
         </header>
 
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex gap-2 mb-4 flex-wrap pb-1">
           {TYPE_FILTERS.map((f) => (
             <button
               key={f.id}
@@ -98,7 +98,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex gap-2 mb-6 flex-wrap pb-1">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
@@ -161,8 +161,8 @@ export default function Home() {
                     className={cn(
                       "text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ml-3",
                       exp.type === "personal"
-                        ? "bg-blue-50 text-blue-600 border border-blue-100"
-                        : "bg-purple-50 text-purple-600 border border-purple-100"
+                        ? "bg-primary/5 text-primary/70 border border-primary/15"
+                        : "bg-primary/10 text-primary border border-primary/20"
                     )}
                   >
                     {exp.type === "personal" ? "Personal" : "Professional"}

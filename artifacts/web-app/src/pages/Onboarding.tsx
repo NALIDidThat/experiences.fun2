@@ -226,7 +226,7 @@ export default function Onboarding() {
               initial="enter"
               animate="center"
               exit="exit"
-              className="absolute inset-0 p-6 md:p-8 flex flex-col overflow-y-auto overflow-x-hidden"
+              className="absolute inset-0 p-4 md:p-8 flex flex-col overflow-y-auto overflow-x-hidden"
             >
               
               {/* Step 1: Welcome */}

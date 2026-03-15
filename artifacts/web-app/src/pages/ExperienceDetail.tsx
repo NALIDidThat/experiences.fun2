@@ -100,8 +100,8 @@ export default function ExperienceDetail() {
                 className={cn(
                   "text-xs font-bold px-3 py-1.5 rounded-full",
                   experience.type === "personal"
-                    ? "bg-blue-50 text-blue-600 border border-blue-100"
-                    : "bg-purple-50 text-purple-600 border border-purple-100"
+                    ? "bg-primary/5 text-primary/70 border border-primary/15"
+                    : "bg-primary/10 text-primary border border-primary/20"
                 )}
               >
                 {experience.type === "personal" ? "Personal" : "Professional"}

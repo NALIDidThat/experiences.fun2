@@ -252,8 +252,8 @@ export default function Profile() {
                           className={cn(
                             "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
                             exp.type === "personal"
-                              ? "bg-blue-50 text-blue-600 border border-blue-100"
-                              : "bg-purple-50 text-purple-600 border border-purple-100"
+                              ? "bg-primary/5 text-primary/70 border border-primary/15"
+                              : "bg-primary/10 text-primary border border-primary/20"
                           )}
                         >
                           {exp.type === "personal" ? "Personal" : "Professional"}
@@ -284,8 +284,8 @@ export default function Profile() {
 
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-primary" />
                 </div>
                 <h2 className="text-lg font-display font-bold text-gray-900">Experiences Joined</h2>
                 <span className="text-sm text-gray-400 font-medium ml-auto">{joinedExperiences.length}</span>
@@ -324,8 +324,8 @@ export default function Profile() {
                           className={cn(
                             "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ml-2",
                             exp.type === "personal"
-                              ? "bg-blue-50 text-blue-600 border border-blue-100"
-                              : "bg-purple-50 text-purple-600 border border-purple-100"
+                              ? "bg-primary/5 text-primary/70 border border-primary/15"
+                              : "bg-primary/10 text-primary border border-primary/20"
                           )}
                         >
                           {exp.type === "personal" ? "Personal" : "Professional"}
