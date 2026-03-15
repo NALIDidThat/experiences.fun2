@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { ArrowLeft, Loader2, MapPin } from "lucide-react";
-import { useListExperiences } from "@workspace/api-client-react";
 import { getAuthHeaders } from "@/lib/auth";
+import { geocodeCity } from "@/lib/geocode";
 
 interface MapExp {
   id: number;
@@ -11,6 +11,8 @@ interface MapExp {
   category: string;
   type: string;
   date: string;
+  city: string;
+  country: string;
   xp_reward: number;
 }
 
@@ -26,24 +28,40 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   entrepreneurship: "🚀", health: "💪", tech: "💻", events: "🎉",
 };
 
-const geocodeCache: Record<string, { lat: number; lon: number } | null> = {};
+function useAllExperiences() {
+  const [data, setData] = useState<MapExp[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-async function geocodeCity(city: string): Promise<{ lat: number; lon: number } | null> {
-  if (city in geocodeCache) return geocodeCache[city];
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
-      { headers: { "User-Agent": "experiences.fun/1.0" } }
-    );
-    const data = await res.json();
-    if (data?.[0]) {
-      const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      geocodeCache[city] = result;
-      return result;
-    }
-  } catch {}
-  geocodeCache[city] = null;
-  return null;
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const fetchAll = async () => {
+      const allExps: MapExp[] = [];
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const res = await fetch(`${base}/api/experiences?page=${page}`, { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (json.experiences) {
+          for (const e of json.experiences) {
+            allExps.push({
+              id: e.id, title: e.title, category: e.category,
+              type: e.type, date: e.date, city: e.city,
+              country: e.country || "", xp_reward: e.xp_reward,
+            });
+          }
+          hasMore = allExps.length < json.total;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+      setData(allExps);
+      setIsLoading(false);
+    };
+    fetchAll().catch(() => setIsLoading(false));
+  }, []);
+
+  return { data, isLoading };
 }
 
 export default function Map() {
@@ -51,44 +69,41 @@ export default function Map() {
   const [cities, setCities] = useState<GeoCity[]>([]);
   const [geocoding, setGeocoding] = useState(false);
   const [selectedCity, setSelectedCity] = useState<GeoCity | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const idlePanRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const listQuery = { enabled: true, refetchOnMount: true as const };
-  const { data, isLoading } = useListExperiences(
-    {},
-    {
-      query: listQuery as typeof listQuery & { queryKey: readonly unknown[] },
-      request: { headers: getAuthHeaders() },
-    }
-  );
+  const { data: experiences, isLoading } = useAllExperiences();
 
   useEffect(() => {
-    if (!data?.experiences?.length) return;
+    if (!experiences?.length) return;
+    setTotalCount(experiences.length);
 
     const byCity: Record<string, MapExp[]> = {};
-    for (const exp of data.experiences) {
-      if (!byCity[exp.city]) byCity[exp.city] = [];
-      byCity[exp.city].push({ id: exp.id, title: exp.title, category: exp.category, type: exp.type, date: exp.date, xp_reward: exp.xp_reward });
+    for (const exp of experiences) {
+      const key = exp.city;
+      if (!byCity[key]) byCity[key] = [];
+      byCity[key].push(exp);
     }
 
     const fetchCoords = async () => {
       setGeocoding(true);
       const results: GeoCity[] = [];
-      for (const city of Object.keys(byCity)) {
-        const coords = await geocodeCity(city);
+      for (const cityName of Object.keys(byCity)) {
+        const sampleExp = byCity[cityName][0];
+        const coords = await geocodeCity(cityName, sampleExp.country);
         if (coords) {
-          results.push({ city, lat: coords.lat, lon: coords.lon, experiences: byCity[city] });
+          results.push({ city: cityName, lat: coords.lat, lon: coords.lon, experiences: byCity[cityName] });
         }
-        await new Promise(r => setTimeout(r, 200));
       }
       setCities(results);
       setGeocoding(false);
     };
 
     fetchCoords();
-  }, [data]);
+  }, [experiences]);
 
   useEffect(() => {
     if (!mapRef.current || cities.length === 0) return;
@@ -160,11 +175,29 @@ export default function Map() {
         const bounds = L.latLngBounds(cities.map(c => [c.lat, c.lon]));
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
       }
+
+      let idleTimeout: ReturnType<typeof setTimeout>;
+      const startIdlePan = () => {
+        if (idlePanRef.current) clearInterval(idlePanRef.current);
+        idlePanRef.current = setInterval(() => {
+          const center = map.getCenter();
+          map.panTo([center.lat, center.lng + 0.3], { animate: true, duration: 2, easeLinearity: 1 });
+        }, 3000);
+      };
+      const resetIdleTimer = () => {
+        if (idlePanRef.current) clearInterval(idlePanRef.current);
+        clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(startIdlePan, 8000);
+      };
+
+      map.on("mousedown touchstart zoomstart", resetIdleTimer);
+      resetIdleTimer();
     };
 
     initMap();
 
     return () => {
+      if (idlePanRef.current) clearInterval(idlePanRef.current);
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
@@ -187,9 +220,9 @@ export default function Map() {
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-primary" />
               <span className="text-sm font-bold text-gray-900">Experience Map</span>
-              {data?.experiences && (
+              {totalCount > 0 && (
                 <span className="text-xs text-gray-400 font-medium">
-                  {data.experiences.length} experiences
+                  {totalCount} experiences
                 </span>
               )}
             </div>
@@ -279,7 +312,7 @@ export default function Map() {
           </div>
         )}
 
-        {!isLoading && !geocoding && cities.length === 0 && data?.experiences?.length === 0 && (
+        {!isLoading && !geocoding && cities.length === 0 && totalCount === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-[500]">
             <div className="text-center text-white/80">
               <div className="text-5xl mb-3">🗺️</div>
