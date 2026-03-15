@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { MapPin, Calendar, Users, ArrowLeft, Loader2, Trophy, User, Share2, Clock, Copy, Check, ChevronRight } from "lucide-react";
@@ -129,6 +129,126 @@ function ShareSheet({ open, onClose, experience }: {
   );
 }
 
+const MOOD_OPTIONS = [
+  { id: "energised", emoji: "⚡", label: "Energised" },
+  { id: "connected", emoji: "🤝", label: "Connected" },
+  { id: "challenged", emoji: "🧗", label: "Challenged" },
+  { id: "relaxed", emoji: "🌿", label: "Relaxed" },
+];
+
+function ReflectionModal({ open, onClose, experienceId }: {
+  open: boolean;
+  onClose: (success?: boolean) => void;
+  experienceId: number;
+}) {
+  const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
+  const [freeText, setFreeText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const toggleMood = (id: string) => {
+    setSelectedMoods(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    );
+  };
+
+  const handleSubmit = async () => {
+    if (selectedMoods.length === 0) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/experiences/${experienceId}/reflect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+        body: JSON.stringify({ moods: selectedMoods, free_text: freeText || null }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ message: "Something went wrong" }));
+        setSubmitError(body.message || "Could not submit reflection");
+        setSubmitting(false);
+        return;
+      }
+      setSubmitted(true);
+      setTimeout(() => onClose(true), 1500);
+    } catch {
+      setSubmitError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => onClose()}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-lg bg-white rounded-t-3xl p-5 pb-8 animate-in slide-in-from-bottom duration-300"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+
+        {submitted ? (
+          <div className="text-center py-6">
+            <div className="text-5xl mb-3">✨</div>
+            <h3 className="text-lg font-bold text-gray-900">Thanks for reflecting!</h3>
+            <p className="text-sm text-gray-500 mt-1">This helps us personalize your feed.</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">How did this feel?</h3>
+            <p className="text-sm text-gray-500 mb-5">Select all that apply</p>
+
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              {MOOD_OPTIONS.map(mood => (
+                <button
+                  key={mood.id}
+                  onClick={() => toggleMood(mood.id)}
+                  className={cn(
+                    "flex items-center gap-2.5 p-3.5 rounded-2xl border-2 transition-all text-left",
+                    selectedMoods.includes(mood.id)
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-gray-100 bg-white hover:border-gray-200"
+                  )}
+                >
+                  <span className="text-2xl">{mood.emoji}</span>
+                  <span className={cn(
+                    "text-sm font-semibold",
+                    selectedMoods.includes(mood.id) ? "text-primary" : "text-gray-700"
+                  )}>
+                    {mood.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={freeText}
+              onChange={e => setFreeText(e.target.value)}
+              placeholder="Any thoughts? (optional)"
+              maxLength={500}
+              className="w-full p-3 rounded-xl border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 resize-none h-20 mb-4 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+            />
+
+            {submitError && (
+              <p className="text-xs text-red-500 mb-2 text-center">{submitError}</p>
+            )}
+
+            <Button
+              onClick={handleSubmit}
+              disabled={selectedMoods.length === 0 || submitting}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-semibold"
+            >
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Submit Reflection"}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ParticipantAvatars({ participants, total }: {
   participants: { name: string; username: string }[];
   total: number;
@@ -219,6 +339,8 @@ export default function ExperienceDetail() {
   const id = Number(params?.id);
   const [shareOpen, setShareOpen] = useState(false);
   const [showCompleteAnim, setShowCompleteAnim] = useState(false);
+  const [reflectionOpen, setReflectionOpen] = useState(false);
+  const [hasReflected, setHasReflected] = useState(false);
 
   const detailQuery = { enabled: !!id && !isNaN(id) };
   const { data: experience, isLoading, error } = useGetExperience(id, {
@@ -242,11 +364,23 @@ export default function ExperienceDetail() {
   const joinMutation = useJoinExperience({ request: { headers: getAuthHeaders() } });
   const completeMutation = useCompleteExperience({ request: { headers: getAuthHeaders() } });
 
+  useEffect(() => {
+    if (!id || !isAuthenticated()) return;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    fetch(`${base}/api/ai/reflection-status/${id}`, { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(d => setHasReflected(!!d.has_reflected))
+      .catch(() => {});
+  }, [id]);
+
   const handleJoin = () => {
     joinMutation.mutate({ id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
         queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
+        if (!hasReflected) {
+          setTimeout(() => setReflectionOpen(true), 800);
+        }
       },
     });
   };
@@ -258,6 +392,9 @@ export default function ExperienceDetail() {
         setTimeout(() => setShowCompleteAnim(false), 3000);
         queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
         queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
+        if (!hasReflected) {
+          setTimeout(() => setReflectionOpen(true), 1500);
+        }
       },
     });
   };
@@ -562,6 +699,12 @@ export default function ExperienceDetail() {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         experience={experience}
+      />
+
+      <ReflectionModal
+        open={reflectionOpen}
+        onClose={(success) => { setReflectionOpen(false); if (success) setHasReflected(true); }}
+        experienceId={id}
       />
     </Layout>
   );

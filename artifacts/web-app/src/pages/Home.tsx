@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { Compass, MapPin, Users, Plus, Loader2, Sparkles, ChevronUp, X } from "lucide-react";
+import { Compass, MapPin, Users, Plus, Loader2, Sparkles, ChevronUp, X, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, useMotionValue, animate } from "framer-motion";
 import { useListExperiences, useGetCurrentUser } from "@workspace/api-client-react";
@@ -64,6 +64,36 @@ function useForYouExperiences(enabled: boolean) {
   }, [enabled]);
 
   return { data, isLoading, error };
+}
+
+interface AiRec {
+  id: number;
+  title: string;
+  type: string;
+  category: string;
+  date: string;
+  city: string;
+  xp_reward: number;
+  participant_count: number;
+  fit_reason: string;
+}
+
+function useAiRecommendations(enabled: boolean) {
+  const [data, setData] = useState<AiRec[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    setIsLoading(true);
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    fetch(`${base}/api/ai/recommendations`, { headers: getAuthHeaders() })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(d => setData(d.experiences || []))
+      .catch(() => setData([]))
+      .finally(() => setIsLoading(false));
+  }, [enabled]);
+
+  return { data, isLoading };
 }
 
 interface MapExp {
@@ -164,6 +194,7 @@ export default function Home() {
   );
 
   const forYou = useForYouExperiences(auth && activeTab === "for-you");
+  const aiRecs = useAiRecommendations(auth);
   const { data: mapExperiences } = useMapExperiences();
 
   const experiences = experiencesResult.data?.experiences || [];
@@ -412,6 +443,41 @@ export default function Home() {
                   </button>
                 )}
               </div>
+
+              {/* Picked for you - AI recommendations */}
+              {auth && aiRecs.data && aiRecs.data.length > 0 && activeTab === "discover" && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Bot className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-bold text-gray-900">Picked for you</h3>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                    {aiRecs.data.slice(0, 5).map(rec => (
+                      <button
+                        key={rec.id}
+                        onClick={() => setLocation(`/experience/${rec.id}`)}
+                        className="shrink-0 w-48 bg-gradient-to-br from-primary/5 to-rose-50 rounded-2xl border border-primary/10 p-3.5 text-left hover:shadow-md hover:border-primary/20 transition-all"
+                      >
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-lg">{CATEGORIES.find(c => c.id === rec.category)?.icon || "📌"}</span>
+                          <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            +{rec.xp_reward} XP
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-gray-900 truncate mb-1">{rec.title}</h4>
+                        <p className="text-[11px] text-gray-500 flex items-center gap-1 mb-1.5">
+                          <MapPin className="w-3 h-3" /> {rec.city} · {rec.date}
+                        </p>
+                        {rec.fit_reason && (
+                          <p className="text-[10px] text-primary/70 font-medium leading-tight line-clamp-2">
+                            {rec.fit_reason}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Discover tab */}
               {activeTab === "discover" && (

@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp, Star, Users } from "lucide-react";
+import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp, Star, Users, Bot } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useGetUserProfile, useGetCurrentUser, useToggleUpvote } from "@workspace/api-client-react";
@@ -47,9 +48,20 @@ export default function Profile() {
     request: { headers: getAuthHeaders() },
   });
 
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+
   const profile = profileResult.data;
   const isLoading = isMe ? (meResult.isLoading || (meResult.data && profileResult.isLoading)) : profileResult.isLoading;
   const error = isMe ? (meResult.error || profileResult.error) : profileResult.error;
+
+  useEffect(() => {
+    if (!isMe || !isAuthenticated()) return;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    fetch(`${base}/api/ai/insights`, { headers: getAuthHeaders() })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(d => { if (d.summary) setAiInsight(d.summary); })
+      .catch(() => {});
+  }, [isMe]);
 
   const handleUpvote = () => {
     if (!profile) return;
@@ -208,6 +220,18 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          {isMe && aiInsight && (
+            <div className="bg-gradient-to-br from-primary/5 via-rose-50 to-white rounded-2xl p-5 mb-6 border border-primary/10">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-bold text-gray-900">AI Insights</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">{aiInsight}</p>
+            </div>
+          )}
 
           <div className="space-y-6">
             <div>

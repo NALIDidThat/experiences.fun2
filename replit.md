@@ -53,10 +53,16 @@ artifacts-monorepo/
 
 ### Experiences
 - **Discovery page** (/home) — list all experiences, filter by type (personal/professional), category, auto-filter by user's city when logged in
-- **Experience detail** (/experience/:id) — full details, join button, complete button (host-only), participant list
+- **Experience detail** (/experience/:id) — full details, join button, complete button (host-only), participant list, reflection modal after join/complete
 - **Create experience** (/create) — 6-step form (title, description, type, category, date+location, review)
 - **Join flow** — participants join experiences, host marks as completed, XP awarded to all participants
 - **XP rewards** — default 100 XP per experience, configurable by host
+
+### AI Personalization Engine
+- **Reflection modal** — after joining/completing an experience, users pick moods (energised/connected/challenged/relaxed) + optional text; stored in experience_reflections table
+- **"Picked for you" section** — horizontal scroll on home page showing AI-recommended experiences based on user reflections (calls /api/ai/recommendations)
+- **AI Insights card** — on own profile page, shows AI-generated preference summary based on reflection history (calls /api/ai/insights)
+- **AI model**: gpt-4.1-nano via OpenAI integration proxy
 
 ### User Profile (/u/:username)
 - Avatar (initials fallback), name, @username, city, bio
@@ -97,6 +103,15 @@ artifacts-monorepo/
 - status (joined|completed), xp_earned (default 0), joined_at
 - Unique constraint on (experience_id, user_id)
 
+### experience_reflections table
+- id (serial PK), experience_id (FK → experiences), user_id (FK → users)
+- moods (text[]), free_text (nullable), created_at
+- Unique constraint on (experience_id, user_id)
+
+### ai_profiles table
+- id (serial PK), user_id (FK → users, unique)
+- preference_summary (text, nullable), last_updated (timestamp)
+
 ### upvotes table
 - id (serial PK), from_user_id (FK → users), to_user_id (FK → users), created_at
 - Unique constraint on (from_user_id, to_user_id)
@@ -129,6 +144,10 @@ artifacts-monorepo/
 - `GET /api/experiences/:id` — get experience detail with creator info + join status
 - `POST /api/experiences/:id/join` — join an experience (auth required)
 - `POST /api/experiences/:id/complete` — mark experience completed, award XP (host only)
+- `POST /api/experiences/:id/reflect` — submit mood reflection after joining/completing (auth required)
+- `GET /api/ai/recommendations` — AI-personalized experience recommendations (auth required)
+- `GET /api/ai/insights` — AI-generated preference summary for current user (auth required)
+- `GET /api/ai/reflection-status/:id` — check if user already reflected on an experience (auth required)
 - `POST /api/telegram/webhook` — Telegram bot webhook
 
 ## Environment Variables
