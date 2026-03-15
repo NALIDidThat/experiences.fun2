@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp, Star, Users, Bot } from "lucide-react";
+import { MapPin, Settings, Loader2, Calendar, Trophy, ThumbsUp, Star, Users, Bot, Medal } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { useGetUserProfile, useGetCurrentUser, useToggleUpvote } from "@workspace/api-client-react";
@@ -376,6 +376,37 @@ export default function Profile() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="border-t border-gray-200" />
+
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-amber-600" />
+                </div>
+                <h2 className="text-lg font-display font-bold text-gray-900">Awards</h2>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-white rounded-2xl p-5 border border-amber-100 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Medal className="w-7 h-7 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-base">Waitlist Pioneer</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      Joined {profile.created_at
+                        ? new Date(profile.created_at).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "the waitlist"}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

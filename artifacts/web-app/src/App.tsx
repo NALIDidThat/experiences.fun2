@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 
 import Onboarding from "./pages/Onboarding";
 import Home from "./pages/Home";
+import Experiences from "./pages/Experiences";
+import Challenges from "./pages/Challenges";
 import Profile from "./pages/Profile";
 import ExperienceDetail from "./pages/ExperienceDetail";
 import CreateExperience from "./pages/CreateExperience";
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/" component={Onboarding} />
       <Route path="/tutorial" component={AppTutorial} />
       <Route path="/home" component={Home} />
+      <Route path="/experiences" component={Experiences} />
+      <Route path="/challenges" component={Challenges} />
       <Route path="/token" component={Token} />
       <Route path="/map" component={Map} />
       <Route path="/u/:username" component={Profile} />

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useRoute } from "wouter";
-import { Home, UserCircle, Coins } from "lucide-react";
+import { Home, UserCircle, Compass, Swords, Info } from "lucide-react";
 import { isAuthenticated } from "@/lib/auth";
 
 interface LayoutProps {
@@ -10,8 +10,9 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const hasSession = isAuthenticated();
   const [isHome] = useRoute("/home");
+  const [isExperiences] = useRoute("/experiences");
+  const [isChallenges] = useRoute("/challenges");
   const [isProfile] = useRoute("/u/:username");
-  const [isToken] = useRoute("/token");
   const [isMap] = useRoute("/map");
 
   return (
@@ -35,16 +36,23 @@ export function Layout({ children }: LayoutProps) {
             </Link>
 
             <Link
-              href="/token"
-              className={`flex flex-col items-center justify-center flex-1 h-full space-y-1 transition-colors relative ${
-                isToken ? "text-primary" : "text-gray-400 hover:text-gray-600"
+              href="/experiences"
+              className={`flex flex-col items-center justify-center flex-1 h-full space-y-1 transition-colors ${
+                isExperiences ? "text-primary" : "text-gray-400 hover:text-gray-600"
               }`}
             >
-              <div className="relative">
-                <Coins className={`w-6 h-6 ${isToken ? "fill-primary/10" : ""}`} />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
-              </div>
-              <span className="text-[10px] font-medium">Token</span>
+              <Compass className={`w-6 h-6 ${isExperiences ? "fill-primary/10" : ""}`} />
+              <span className="text-[10px] font-medium">Experiences</span>
+            </Link>
+
+            <Link
+              href="/challenges"
+              className={`flex flex-col items-center justify-center flex-1 h-full space-y-1 transition-colors ${
+                isChallenges ? "text-primary" : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <Swords className={`w-6 h-6 ${isChallenges ? "fill-primary/10" : ""}`} />
+              <span className="text-[10px] font-medium">Challenges</span>
             </Link>
 
             <Link
@@ -63,19 +71,15 @@ export function Layout({ children }: LayoutProps) {
       {/* Top Navigation (Desktop) */}
       {hasSession && !isMap && (
         <nav className="hidden md:flex fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 items-center px-8 z-50">
-          <div className="text-xl font-display font-bold text-primary mr-8">experiences.fun</div>
-          <div className="flex gap-6 items-center flex-1">
-            <Link href="/home" className={`font-medium transition-colors ${isHome ? "text-primary" : "text-gray-500 hover:text-gray-900"}`}>
-              Home
-            </Link>
-            <Link href="/token" className={`font-medium transition-colors flex items-center gap-1.5 ${isToken ? "text-primary" : "text-gray-500 hover:text-gray-900"}`}>
-              <span>Token</span>
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-            </Link>
-            <Link href="/u/me" className={`font-medium transition-colors ${isProfile ? "text-primary" : "text-gray-500 hover:text-gray-900"}`}>
-              Profile
-            </Link>
-          </div>
+          <div className="text-xl font-display font-bold text-primary flex-1">experiences.fun</div>
+          <Link
+            href="/token"
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-primary transition-colors bg-gray-50 hover:bg-primary/5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-primary/20"
+          >
+            <Info className="w-4 h-4" />
+            <span>Token</span>
+            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+          </Link>
         </nav>
       )}
     </div>
