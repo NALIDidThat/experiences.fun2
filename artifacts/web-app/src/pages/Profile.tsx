@@ -268,7 +268,7 @@ export default function Profile() {
                           <MapPin className="w-3 h-3" /> {exp.city}
                         </span>
                         {exp.status === "completed" && (
-                          <span className="font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs">Completed</span>
+                          <span className="font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded text-xs">Completed</span>
                         )}
                         {exp.status !== "completed" && (
                           <span className="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs">Active</span>

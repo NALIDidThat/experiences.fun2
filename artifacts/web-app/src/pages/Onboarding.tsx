@@ -187,7 +187,7 @@ export default function Onboarding() {
     <div className="min-h-[100dvh] w-full bg-gradient-to-br from-pink-600 via-primary to-rose-600 flex flex-col items-center justify-end md:justify-center overflow-hidden font-sans relative">
       <FloatingEmojis step={step} />
 
-      <div className="w-full max-w-md md:rounded-[2rem] rounded-t-[2.5rem] bg-white shadow-2xl relative z-10 flex flex-col h-[80dvh] md:h-[650px] overflow-hidden">
+      <div className="w-full max-w-md md:rounded-[2rem] rounded-t-[2.5rem] bg-white shadow-2xl relative z-10 flex flex-col min-h-[80dvh] max-h-[90dvh] md:h-[650px] md:min-h-0 md:max-h-none">
         
         {/* Header & Navigation */}
         <div className="absolute top-0 left-0 w-full p-4 md:p-6 z-20 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-gray-50/50">

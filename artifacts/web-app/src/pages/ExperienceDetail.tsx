@@ -190,7 +190,7 @@ export default function ExperienceDetail() {
                 <Button
                   onClick={handleComplete}
                   disabled={completeMutation.isPending}
-                  className="w-full h-14 text-lg bg-green-600 hover:bg-green-700 text-white rounded-2xl shadow-lg shadow-green-500/25"
+                  className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25"
                 >
                   {completeMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -205,7 +205,7 @@ export default function ExperienceDetail() {
 
               {experience.joined && experience.participation_status === "completed" && (
                 <div className="text-center py-3">
-                  <span className="text-green-600 font-bold text-lg flex items-center justify-center gap-2">
+                  <span className="text-primary font-bold text-lg flex items-center justify-center gap-2">
                     <Trophy className="w-5 h-5" /> Completed! +{experience.xp_reward} XP earned
                   </span>
                 </div>
@@ -218,7 +218,7 @@ export default function ExperienceDetail() {
               )}
 
               {completeMutation.isSuccess && (
-                <p className="text-green-600 text-sm text-center mt-3 font-semibold">
+                <p className="text-primary text-sm text-center mt-3 font-semibold">
                   +{completeMutation.data.xp_earned} XP earned! Total: {completeMutation.data.total_xp} XP
                 </p>
               )}
