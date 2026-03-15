@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { ArrowLeft, Rocket, Bell, BellOff, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Rocket, Bell, BellOff, ExternalLink, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAuthHeaders, isAuthenticated } from "@/lib/auth";
+import { motion, AnimatePresence } from "framer-motion";
 
 function useCountdown(targetDate: string | null) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
@@ -33,10 +34,19 @@ function useCountdown(targetDate: string | null) {
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="w-16 h-16 md:w-20 md:h-20 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 mb-1.5">
-        <span className="text-2xl md:text-3xl font-bold text-white tabular-nums">
-          {String(value).padStart(2, "0")}
-        </span>
+      <div className="w-16 h-16 md:w-20 md:h-20 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 mb-1.5 overflow-hidden">
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={value}
+            initial={{ y: -30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 30, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="text-2xl md:text-3xl font-bold text-white tabular-nums"
+          >
+            {String(value).padStart(2, "0")}
+          </motion.span>
+        </AnimatePresence>
       </div>
       <span className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">{label}</span>
     </div>
@@ -46,6 +56,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 export default function Token() {
   const [, setLocation] = useLocation();
   const [tokenInterest, setTokenInterest] = useState(false);
+  const [hasTelegram, setHasTelegram] = useState(false);
   const [launchDate, setLaunchDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notifying, setNotifying] = useState(false);
@@ -60,6 +71,7 @@ export default function Token() {
       .then(data => {
         setLaunchDate(data.launch_date);
         setTokenInterest(data.token_interest);
+        setHasTelegram(data.has_telegram ?? false);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -94,7 +106,12 @@ export default function Token() {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="text-center mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-10"
+          >
             <div className="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-5 border border-white/20 text-4xl">
               🪙
             </div>
@@ -105,10 +122,15 @@ export default function Token() {
             <p className="text-white/65 text-base leading-relaxed max-w-sm mx-auto">
               Every XP point you've earned on experiences.fun will convert to real $EXP tokens at launch. Your reputation becomes your stake.
             </p>
-          </div>
+          </motion.div>
 
           {!loading && (
-            <div className="mb-10">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="mb-10"
+            >
               {launchDate && timeLeft ? (
                 <div>
                   <p className="text-white/50 text-xs font-semibold tracking-widest uppercase text-center mb-4">Launching in</p>
@@ -127,10 +149,15 @@ export default function Token() {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
 
-          <div className="space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="space-y-3"
+          >
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-4 flex items-start gap-3">
               <span className="text-xl shrink-0">⭐</span>
               <div>
@@ -152,23 +179,49 @@ export default function Token() {
                 <p className="text-white/55 text-xs leading-relaxed">Users who opt in early get a 10% allocation bonus applied to their final token count.</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="mt-8 space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="mt-8 space-y-3"
+          >
             {isAuthenticated() && (
-              <Button
-                onClick={handleNotifyMe}
-                disabled={tokenInterest || notifying}
-                className="w-full h-14 text-base font-bold bg-white hover:bg-white/95 text-[#f20789] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] transition-all"
-              >
-                {notifying ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : tokenInterest ? (
-                  <><BellOff className="w-5 h-5 mr-2" /> You're on the list!</>
+              <>
+                {hasTelegram ? (
+                  <Button
+                    onClick={handleNotifyMe}
+                    disabled={tokenInterest || notifying}
+                    className="w-full h-14 text-base font-bold bg-white hover:bg-white/95 text-[#f20789] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] transition-all"
+                  >
+                    {notifying ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : tokenInterest ? (
+                      <><BellOff className="w-5 h-5 mr-2" /> You're on the list!</>
+                    ) : (
+                      <><Bell className="w-5 h-5 mr-2" /> Notify Me on Telegram</>
+                    )}
+                  </Button>
                 ) : (
-                  <><Bell className="w-5 h-5 mr-2" /> Notify Me at Launch</>
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-center">
+                    <MessageCircle className="w-8 h-8 text-white/70 mx-auto mb-2" />
+                    <p className="text-white font-semibold text-sm mb-1">Connect Telegram First</p>
+                    <p className="text-white/55 text-xs mb-3 leading-relaxed">
+                      Link your Telegram account to get notified when $EXP launches. Start a chat with our bot to connect.
+                    </p>
+                    <a
+                      href="https://t.me/ExperiencesFunBot"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-white hover:bg-white/95 text-[#f20789] font-bold text-sm px-5 py-2.5 rounded-xl transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Open Telegram Bot
+                    </a>
+                  </div>
                 )}
-              </Button>
+              </>
             )}
             <a
               href="https://x.com/experiencesfun"
@@ -179,7 +232,7 @@ export default function Token() {
               <ExternalLink className="w-4 h-4" />
               Follow on X for Updates
             </a>
-          </div>
+          </motion.div>
         </div>
       </div>
     </Layout>

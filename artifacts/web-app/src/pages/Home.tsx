@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { Compass, MapPin, Users, Plus, Loader2, Sparkles, ChevronUp } from "lucide-react";
+import { Compass, MapPin, Users, Plus, Loader2, Sparkles, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, useMotionValue, animate } from "framer-motion";
 import { useListExperiences, useGetCurrentUser } from "@workspace/api-client-react";
@@ -130,6 +130,7 @@ export default function Home() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [snapState, setSnapState] = useState<"peek" | "half" | "full">("half");
+  const [bannerDismissed, setBannerDismissed] = useState(() => sessionStorage.getItem("token_banner_dismissed") === "1");
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<LeafletMap | null>(null);
@@ -297,18 +298,34 @@ export default function Home() {
     <Layout>
       <div className="fixed inset-0 overflow-hidden bg-gray-900">
 
-        {/* Token banner overlaid on map */}
-        <button
-          onClick={() => setLocation("/token")}
-          className="absolute top-0 left-0 right-0 z-20 w-full bg-gradient-to-r from-[#f20789] to-rose-500 px-4 py-2.5 flex items-center justify-between gap-3 text-white hover:opacity-95 transition-all"
-          style={{ height: 46 }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-base shrink-0">🪙</span>
-            <p className="text-xs font-bold">$EXP Token — Coming Soon</p>
+        {!bannerDismissed && (
+          <div
+            className="absolute top-0 left-0 right-0 z-20 w-full bg-gradient-to-r from-[#f20789] to-rose-500 px-4 py-2.5 flex items-center gap-3 text-white"
+            style={{ height: 46 }}
+          >
+            <button
+              onClick={() => setLocation("/token")}
+              className="flex items-center justify-between gap-3 flex-1 hover:opacity-95 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-base shrink-0">🪙</span>
+                <p className="text-xs font-bold">$EXP Token — Coming Soon</p>
+              </div>
+              <span className="text-white/70 text-[11px] font-medium">Learn More →</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setBannerDismissed(true);
+                sessionStorage.setItem("token_banner_dismissed", "1");
+              }}
+              className="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <span className="text-white/70 text-[11px] font-medium">Learn More →</span>
-        </button>
+        )}
 
         {/* Floating header on map */}
         <div className="absolute left-4 right-4 z-10 flex items-center justify-between" style={{ top: 58 }}>

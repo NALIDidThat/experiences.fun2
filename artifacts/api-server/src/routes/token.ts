@@ -8,7 +8,8 @@ const router: IRouter = Router();
 router.get("/token/status", async (req: Request, res: Response): Promise<void> => {
   const launchDate = process.env.TOKEN_LAUNCH_DATE || null;
   const tokenInterest = req.currentUser?.token_interest ?? false;
-  res.json({ launch_date: launchDate, token_interest: tokenInterest });
+  const hasTelegram = !!req.currentUser?.telegram_id;
+  res.json({ launch_date: launchDate, token_interest: tokenInterest, has_telegram: hasTelegram });
 });
 
 router.post("/token/notify-me", async (req: Request, res: Response): Promise<void> => {
