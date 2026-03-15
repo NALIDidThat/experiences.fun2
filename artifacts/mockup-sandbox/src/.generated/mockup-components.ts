@@ -4,5 +4,7 @@ export const modules: ModuleMap = {
   "./components/mockups/onboarding/OnboardingFlow.tsx": () => import("../components/mockups/onboarding/OnboardingFlow.tsx"),
   "./components/mockups/onboarding-layouts/CompactTop.tsx": () => import("../components/mockups/onboarding-layouts/CompactTop.tsx"),
   "./components/mockups/onboarding-layouts/FullBleed.tsx": () => import("../components/mockups/onboarding-layouts/FullBleed.tsx"),
+  "./components/mockups/onboarding-layouts/FullBleedV2.tsx": () => import("../components/mockups/onboarding-layouts/FullBleedV2.tsx"),
+  "./components/mockups/onboarding-layouts/FullBleedV3.tsx": () => import("../components/mockups/onboarding-layouts/FullBleedV3.tsx"),
   "./components/mockups/onboarding-layouts/SplitScreen.tsx": () => import("../components/mockups/onboarding-layouts/SplitScreen.tsx")
 };
