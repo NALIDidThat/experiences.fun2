@@ -51,7 +51,7 @@ function App() {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        loginMethods: ["email", "wallet", "telegram"],
+        loginMethods: ["email", "telegram"],
         appearance: {
           theme: "light",
           accentColor: "#f20789",

@@ -36,9 +36,7 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
 
   const { name, username, city, country, interests, role, bio } = parsed.data;
 
-  const verifiedPrivyId: string | null = req.privyUserId || null;
-  const bodyPrivyId: string | null = (req.body.privy_id as string) || null;
-  const privyId: string | null = verifiedPrivyId || bodyPrivyId;
+  const privyId: string | null = req.privyUserId || null;
   const walletAddress: string | null = (req.body.wallet_address as string) || null;
 
   let verifiedTelegramId: string | null = null;
@@ -53,11 +51,11 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
     }
   }
 
-  if (verifiedPrivyId) {
+  if (privyId) {
     const [existingByPrivy] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.privy_id, verifiedPrivyId))
+      .where(eq(usersTable.privy_id, privyId))
       .limit(1);
 
     if (existingByPrivy) {
