@@ -158,7 +158,11 @@ export default function Onboarding() {
         if (res.session_token) {
           setSessionToken(res.session_token);
         }
-        setLocation("/home");
+        if (isEditMode) {
+          setLocation("/home");
+        } else {
+          setLocation("/tutorial");
+        }
       }
     });
   };

@@ -11,6 +11,7 @@ import ExperienceDetail from "./pages/ExperienceDetail";
 import CreateExperience from "./pages/CreateExperience";
 import Token from "./pages/Token";
 import Map from "./pages/Map";
+import AppTutorial from "./pages/AppTutorial";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Onboarding} />
+      <Route path="/tutorial" component={AppTutorial} />
       <Route path="/home" component={Home} />
       <Route path="/token" component={Token} />
       <Route path="/map" component={Map} />

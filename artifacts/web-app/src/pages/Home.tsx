@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { TutorialOverlay } from "@/components/TutorialOverlay";
 import { Compass, MapPin, Users, Plus, Loader2, Rocket, Map, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useListExperiences, useGetCurrentUser } from "@workspace/api-client-react";
@@ -99,7 +98,6 @@ export default function Home() {
 
   return (
     <Layout>
-      <TutorialOverlay />
 
       <div className="min-h-screen bg-gray-50 pb-24">
         {/* Token Launch Banner */}
