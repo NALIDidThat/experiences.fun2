@@ -75,6 +75,7 @@ export default function Map() {
   const leafletMap = useRef<LeafletMap | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
   const idlePanRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: experiences, isLoading } = useAllExperiences();
 
@@ -176,7 +177,6 @@ export default function Map() {
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
       }
 
-      let idleTimeout: ReturnType<typeof setTimeout>;
       const startIdlePan = () => {
         if (idlePanRef.current) clearInterval(idlePanRef.current);
         idlePanRef.current = setInterval(() => {
@@ -186,17 +186,19 @@ export default function Map() {
       };
       const resetIdleTimer = () => {
         if (idlePanRef.current) clearInterval(idlePanRef.current);
-        clearTimeout(idleTimeout);
-        idleTimeout = setTimeout(startIdlePan, 8000);
+        if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+        idleTimeoutRef.current = setTimeout(startIdlePan, 8000);
       };
 
       map.on("mousedown touchstart zoomstart", resetIdleTimer);
       resetIdleTimer();
+
     };
 
     initMap();
 
     return () => {
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
       if (idlePanRef.current) clearInterval(idlePanRef.current);
       if (leafletMap.current) {
         leafletMap.current.remove();

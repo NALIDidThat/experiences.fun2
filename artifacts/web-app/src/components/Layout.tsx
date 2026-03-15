@@ -12,15 +12,16 @@ export function Layout({ children }: LayoutProps) {
   const [isHome] = useRoute("/home");
   const [isProfile] = useRoute("/u/:username");
   const [isToken] = useRoute("/token");
+  const [isMap] = useRoute("/map");
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 pb-20 md:pb-0 md:pt-16">
+      <main className={`flex-1 ${isMap ? "" : "pb-20 md:pb-0 md:pt-16"}`}>
         {children}
       </main>
 
       {/* Bottom Navigation (Mobile) */}
-      {hasSession && (
+      {hasSession && !isMap && (
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:hidden z-50">
           <div className="flex justify-around items-center h-16 px-2">
             <Link
@@ -60,7 +61,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Top Navigation (Desktop) */}
-      {hasSession && (
+      {hasSession && !isMap && (
         <nav className="hidden md:flex fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 items-center px-8 z-50">
           <div className="text-xl font-display font-bold text-primary mr-8">experiences.fun</div>
           <div className="flex gap-6 items-center flex-1">
