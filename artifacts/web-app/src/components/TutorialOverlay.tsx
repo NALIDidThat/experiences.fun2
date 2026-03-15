@@ -36,8 +36,8 @@ const SLIDES: Slide[] = [
   },
   {
     emoji: "🚀",
-    title: "Your XP = Your $XPF",
-    description: "experiences.fun is launching the $XPF token. Every XP you earn now converts to real tokens at launch. Start earning early.",
+    title: "Your XP = Your $EXP",
+    description: "experiences.fun is launching the $EXP token. Every XP you earn now converts to real tokens at launch. Start earning early.",
     icon: <Users className="w-5 h-5" />,
     color: "from-[#f20789] to-pink-700",
   },

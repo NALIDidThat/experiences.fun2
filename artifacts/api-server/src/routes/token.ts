@@ -51,7 +51,7 @@ router.post("/admin/token-launch/notify", async (req: Request, res: Response): P
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: user.telegram_id,
-          text: `🚀 The $XPF token is launching NOW!\n\nYour XP is about to become real value. Open experiences.fun to learn more.`,
+          text: `🚀 The $EXP token is launching NOW!\n\nYour XP is about to become real value. Open experiences.fun to learn more.`,
           parse_mode: "Markdown",
         }),
       });

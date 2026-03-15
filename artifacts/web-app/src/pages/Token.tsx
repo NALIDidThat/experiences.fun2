@@ -100,10 +100,10 @@ export default function Token() {
             </div>
             <div className="text-white/50 text-xs font-semibold tracking-widest uppercase mb-2">Coming Soon</div>
             <h1 className="text-4xl font-extrabold text-white leading-tight mb-3">
-              $XPF Token
+              $EXP Token
             </h1>
             <p className="text-white/65 text-base leading-relaxed max-w-sm mx-auto">
-              Every XP point you've earned on experiences.fun will convert to real $XPF tokens at launch. Your reputation becomes your stake.
+              Every XP point you've earned on experiences.fun will convert to real $EXP tokens at launch. Your reputation becomes your stake.
             </p>
           </div>
 
@@ -135,14 +135,14 @@ export default function Token() {
               <span className="text-xl shrink-0">⭐</span>
               <div>
                 <p className="text-white font-semibold text-sm mb-0.5">Your XP = Your Tokens</p>
-                <p className="text-white/55 text-xs leading-relaxed">Every XP you've earned by completing experiences converts 1:1 into $XPF at launch.</p>
+                <p className="text-white/55 text-xs leading-relaxed">Every XP you've earned by completing experiences converts 1:1 into $EXP at launch.</p>
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-4 flex items-start gap-3">
               <span className="text-xl shrink-0">🌍</span>
               <div>
                 <p className="text-white font-semibold text-sm mb-0.5">Community-Owned</p>
-                <p className="text-white/55 text-xs leading-relaxed">$XPF will govern the platform — vote on new categories, featured experiences, and network growth.</p>
+                <p className="text-white/55 text-xs leading-relaxed">$EXP will govern the platform — vote on new categories, featured experiences, and network growth.</p>
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-4 flex items-start gap-3">

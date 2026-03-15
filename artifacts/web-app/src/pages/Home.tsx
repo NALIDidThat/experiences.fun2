@@ -110,7 +110,7 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <span className="text-xl shrink-0">🪙</span>
             <div className="text-left">
-              <p className="text-xs font-bold leading-tight">$XPF Token — Coming Soon</p>
+              <p className="text-xs font-bold leading-tight">$EXP Token — Coming Soon</p>
               <p className="text-white/70 text-[11px] leading-tight">Your XP converts to real tokens at launch</p>
             </div>
           </div>
