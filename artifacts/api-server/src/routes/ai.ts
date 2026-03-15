@@ -78,18 +78,18 @@ router.post("/experiences/:id/reflect", async (req: Request, res: Response): Pro
     return;
   }
 
-  await db.insert(experienceReflectionsTable).values({
+  const [reflection] = await db.insert(experienceReflectionsTable).values({
     user_id: req.currentUser.id,
     experience_id: experienceId,
     moods: filteredMoods,
     free_text: typeof free_text === "string" && free_text.trim() ? free_text.trim().slice(0, 500) : null,
-  });
+  }).returning();
 
   updateAiProfileAsync(req.currentUser.id).catch(err =>
     console.error("Failed to update AI profile:", err)
   );
 
-  res.json({ success: true });
+  res.status(201).json({ id: reflection.id, moods: reflection.moods, created_at: reflection.created_at });
 });
 
 router.get("/ai/recommendations", async (req: Request, res: Response): Promise<void> => {
