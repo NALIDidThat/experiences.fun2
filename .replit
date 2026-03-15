@@ -30,3 +30,4 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
+VITE_PRIVY_APP_ID = "cmmrbnh1u00220bjp8nm1dzqz"
