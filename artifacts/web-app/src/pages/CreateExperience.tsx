@@ -176,13 +176,13 @@ export default function CreateExperience() {
                     placeholder="e.g. Community Tree Planting"
                     value={formData.title}
                     onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-                    className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                    className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                   />
                   <div className="mt-auto pt-6">
                     <Button
                       onClick={nextStep}
                       disabled={!formData.title.trim()}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
                     >
                       Continue <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -204,7 +204,7 @@ export default function CreateExperience() {
                     <Button
                       onClick={nextStep}
                       disabled={!formData.description.trim()}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
                     >
                       Continue <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -301,7 +301,7 @@ export default function CreateExperience() {
                         type="date"
                         value={formData.date}
                         onChange={(e) => setFormData((p) => ({ ...p, date: e.target.value }))}
-                        className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -310,7 +310,7 @@ export default function CreateExperience() {
                         placeholder="e.g. London"
                         value={formData.city}
                         onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
-                        className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -319,7 +319,7 @@ export default function CreateExperience() {
                         placeholder="e.g. United Kingdom"
                         value={formData.country}
                         onChange={(e) => setFormData((p) => ({ ...p, country: e.target.value }))}
-                        className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                       />
                     </div>
                   </div>
@@ -327,7 +327,7 @@ export default function CreateExperience() {
                     <Button
                       onClick={nextStep}
                       disabled={!formData.date || !formData.city.trim() || !formData.country.trim()}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50"
                     >
                       Continue <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
@@ -350,7 +350,7 @@ export default function CreateExperience() {
                         min="2"
                         value={formData.max_participants}
                         onChange={(e) => setFormData((p) => ({ ...p, max_participants: e.target.value }))}
-                        className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -364,7 +364,7 @@ export default function CreateExperience() {
                         max="500"
                         value={formData.xp_reward}
                         onChange={(e) => setFormData((p) => ({ ...p, xp_reward: e.target.value }))}
-                        className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                       />
                     </div>
                   </div>
@@ -372,7 +372,7 @@ export default function CreateExperience() {
                     <Button
                       onClick={handleSubmit}
                       disabled={createMutation.isPending}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25"
                     >
                       {createMutation.isPending ? (
                         <Loader2 className="w-6 h-6 animate-spin" />

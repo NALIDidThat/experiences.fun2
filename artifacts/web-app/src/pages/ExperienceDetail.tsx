@@ -94,7 +94,7 @@ export default function ExperienceDetail() {
         </div>
 
         <div className="max-w-2xl mx-auto px-4 -mt-12 relative z-10">
-          <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100 mb-6">
+          <div className="bg-white rounded-3xl shadow-lg p-4 md:p-6 border border-gray-100 mb-4">
             <div className="flex items-start justify-between mb-4">
               <span
                 className={cn(
@@ -106,58 +106,58 @@ export default function ExperienceDetail() {
               >
                 {experience.type === "personal" ? "Personal" : "Professional"}
               </span>
-              <span className="text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+              <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/15">
                 +{experience.xp_reward} XP
               </span>
             </div>
 
-            <h1 className="text-2xl font-display font-bold text-gray-900 mb-3">
+            <h1 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-2">
               {experience.title}
             </h1>
 
-            <p className="text-gray-600 leading-relaxed mb-6 whitespace-pre-wrap">
+            <p className="text-gray-600 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
               {experience.description}
             </p>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2.5">
-                <Calendar className="w-5 h-5 text-primary shrink-0" />
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <div className="text-xs text-gray-400 font-semibold uppercase">Date</div>
-                  <div className="text-sm font-bold text-gray-900">{experience.date}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Date</div>
+                  <div className="text-xs font-bold text-gray-900">{experience.date}</div>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2.5">
-                <MapPin className="w-5 h-5 text-primary shrink-0" />
+              <div className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <div className="text-xs text-gray-400 font-semibold uppercase">Location</div>
-                  <div className="text-sm font-bold text-gray-900">{experience.city}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Location</div>
+                  <div className="text-xs font-bold text-gray-900">{experience.city}</div>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-primary shrink-0" />
+              <div className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2">
+                <Users className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <div className="text-xs text-gray-400 font-semibold uppercase">Participants</div>
-                  <div className="text-sm font-bold text-gray-900">
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Participants</div>
+                  <div className="text-xs font-bold text-gray-900">
                     {experience.participant_count}
                     {experience.max_participants ? ` / ${experience.max_participants}` : ""}
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2.5">
-                <Trophy className="w-5 h-5 text-primary shrink-0" />
+              <div className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-primary shrink-0" />
                 <div>
-                  <div className="text-xs text-gray-400 font-semibold uppercase">Category</div>
-                  <div className="text-sm font-bold text-gray-900 capitalize">{experience.category}</div>
+                  <div className="text-[10px] text-gray-400 font-semibold uppercase">Category</div>
+                  <div className="text-xs font-bold text-gray-900 capitalize">{experience.category}</div>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => setLocation(`/u/${experience.creator.username}`)}
-              className="w-full bg-gray-50 rounded-xl p-4 flex items-center gap-3 hover:bg-gray-100 transition-colors"
+              className="w-full bg-gray-50 rounded-lg p-3 flex items-center gap-2.5 hover:bg-gray-100 transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
                 {experience.creator.name.charAt(0).toUpperCase()}
               </div>
               <div className="text-left">

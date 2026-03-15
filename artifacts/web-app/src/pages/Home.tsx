@@ -183,7 +183,7 @@ export default function Home() {
                     <Users className="w-3.5 h-3.5" /> {exp.participant_count}
                     {exp.max_participants ? `/${exp.max_participants}` : ""}
                   </span>
-                  <span className="font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
+                  <span className="font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/15">
                     +{exp.xp_reward} XP
                   </span>
                 </div>

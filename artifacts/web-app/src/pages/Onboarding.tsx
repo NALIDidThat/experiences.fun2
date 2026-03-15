@@ -232,21 +232,21 @@ export default function Onboarding() {
               {/* Step 1: Welcome */}
               {step === 1 && (
                 <div className="flex flex-col h-full justify-center">
-                  <div className="text-center mb-10">
-                    <div className="w-20 h-20 bg-primary/10 rounded-3xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-inner transform rotate-3">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-primary/10 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl shadow-inner transform rotate-3">
                       ✨
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-display font-extrabold text-gray-900 mb-4 leading-tight">
+                    <h1 className="text-2xl md:text-4xl font-display font-extrabold text-gray-900 mb-3 leading-tight">
                       Welcome to <span className="text-primary">experiences.fun</span>
                     </h1>
-                    <p className="text-gray-500 text-lg leading-relaxed px-4">
+                    <p className="text-gray-500 text-base leading-relaxed px-2">
                       Join real-world experiences, connect with locals, and build your community reputation.
                     </p>
                   </div>
                   <div className="mt-auto">
                     <Button 
                       onClick={nextStep} 
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl group shadow-lg shadow-primary/25 transition-all hover:scale-[1.02]"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl group shadow-lg shadow-primary/25 transition-all hover:scale-[1.02]"
                     >
                       Start
                       <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -259,37 +259,37 @@ export default function Onboarding() {
               {step === 2 && (
                 <div className="flex flex-col h-full">
                   <div>
-                    <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">Where are you based?</h2>
-                    <p className="text-gray-500 mb-8">
-                      We use your location to show nearby experiences and community initiatives.
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">Where are you based?</h2>
+                    <p className="text-gray-500 text-sm mb-5">
+                      We use your location to show nearby experiences.
                     </p>
                     
-                    <div className="space-y-5">
-                      <div className="space-y-2">
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-gray-700 ml-1">City</label>
                         <Input 
                           placeholder="e.g. London" 
                           value={formData.city}
                           onChange={(e) => setFormData(p => ({ ...p, city: e.target.value }))}
-                          className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                          className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-gray-700 ml-1">Country</label>
                         <Input 
                           placeholder="e.g. United Kingdom" 
                           value={formData.country}
                           onChange={(e) => setFormData(p => ({ ...p, country: e.target.value }))}
-                          className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                          className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-auto pt-6">
+                  <div className="mt-auto pt-4">
                     <Button 
                       onClick={nextStep}
                       disabled={!formData.city.trim() || !formData.country.trim()}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
                     >
                       Continue
                     </Button>
@@ -301,12 +301,12 @@ export default function Onboarding() {
               {step === 3 && (
                 <div className="flex flex-col h-full">
                   <div>
-                    <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">What interests you?</h2>
-                    <p className="text-gray-500 mb-6">
-                      Select all the topics you'd love to explore or host.
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">What interests you?</h2>
+                    <p className="text-gray-500 text-sm mb-4">
+                      Select topics you'd love to explore or host.
                     </p>
                     
-                    <div className="grid grid-cols-2 gap-3 pb-4">
+                    <div className="grid grid-cols-2 gap-2 pb-2">
                       {INTERESTS.map((interest) => {
                         const isSelected = formData.interests.includes(interest.id);
                         return (
@@ -314,15 +314,15 @@ export default function Onboarding() {
                             key={interest.id}
                             onClick={() => handleInterestToggle(interest.id)}
                             className={cn(
-                              "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-200 text-center relative overflow-hidden",
+                              "flex flex-col items-center justify-center p-2.5 rounded-xl border-2 transition-all duration-200 text-center relative overflow-hidden",
                               isSelected 
                                 ? "border-primary bg-primary/5 text-primary shadow-sm" 
                                 : "border-gray-100 bg-white text-gray-600 hover:border-gray-200 hover:bg-gray-50"
                             )}
                           >
-                            <span className="text-3xl mb-2 relative z-10">{interest.icon}</span>
+                            <span className="text-2xl mb-1 relative z-10">{interest.icon}</span>
                             <span className={cn(
-                              "text-[13px] font-semibold leading-tight relative z-10",
+                              "text-xs font-semibold leading-tight relative z-10",
                               isSelected ? "text-primary" : ""
                             )}>
                               {interest.label}
@@ -335,11 +335,11 @@ export default function Onboarding() {
                       })}
                     </div>
                   </div>
-                  <div className="mt-auto pt-4 bg-white">
+                  <div className="mt-auto pt-3 bg-white">
                     <Button 
                       onClick={nextStep}
                       disabled={formData.interests.length === 0}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
                     >
                       Continue ({formData.interests.length} selected)
                     </Button>
@@ -351,9 +351,9 @@ export default function Onboarding() {
               {step === 4 && (
                 <div className="flex flex-col h-full">
                   <div>
-                    <h2 className="text-2xl font-display font-bold text-gray-900 mb-6">How do you want to participate?</h2>
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-4">How do you want to participate?</h2>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {PARTICIPATION_OPTIONS.map((option) => {
                         const isSelected = formData.participation === option.id;
                         return (
@@ -361,10 +361,10 @@ export default function Onboarding() {
                             key={option.id}
                             onClick={() => {
                               setFormData(p => ({ ...p, participation: option.id }));
-                              setTimeout(nextStep, 350); // Auto-advance
+                              setTimeout(nextStep, 350);
                             }}
                             className={cn(
-                              "w-full text-left p-5 rounded-2xl border-2 transition-all duration-200 flex items-center justify-between group",
+                              "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group",
                               isSelected 
                                 ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
                                 : "border-gray-100 bg-white hover:border-primary/30 hover:bg-gray-50 hover:shadow-sm"
@@ -372,7 +372,7 @@ export default function Onboarding() {
                           >
                             <div>
                               <div className={cn(
-                                "font-bold text-lg mb-1 transition-colors",
+                                "font-bold text-base mb-0.5 transition-colors",
                                 isSelected ? "text-primary" : "text-gray-900 group-hover:text-gray-900"
                               )}>
                                 {option.title}
@@ -405,31 +405,31 @@ export default function Onboarding() {
               {step === 5 && (
                 <div className="flex flex-col h-full">
                   <div>
-                    <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">Create your profile</h2>
-                    <p className="text-gray-500 mb-6">
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">Create your profile</h2>
+                    <p className="text-gray-500 text-sm mb-4">
                       This is how the community will see you.
                     </p>
                     
-                    <div className="space-y-5">
-                      <div className="space-y-2">
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-gray-700 ml-1">Display Name</label>
                         <Input 
                           placeholder="Jane Doe" 
                           value={formData.name}
                           onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                          className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg px-5 shadow-sm"
+                          className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-gray-700 ml-1">Username</label>
                         <div className="relative">
-                          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-lg">@</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-base">@</span>
                           <Input 
                             placeholder="janedoe" 
                             value={formData.username}
                             onChange={(e) => setFormData(p => ({ ...p, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
                             className={cn(
-                              "h-14 pl-9 bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary text-lg pr-12 shadow-sm",
+                              "h-12 pl-8 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base pr-10 shadow-sm",
                               usernameError ? "border-red-400 focus-visible:ring-red-400" : "",
                               usernameData?.available ? "border-green-400 focus-visible:ring-green-400" : ""
                             )}
@@ -445,22 +445,22 @@ export default function Onboarding() {
                           <p className="text-sm text-green-600 ml-1">Username is available!</p>
                         )}
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <label className="text-sm font-semibold text-gray-700 ml-1">Short bio <span className="text-gray-400 font-normal">(optional)</span></label>
                         <Textarea 
-                          placeholder="Passionate about the environment and building local communities..." 
+                          placeholder="Passionate about the environment..." 
                           value={formData.bio}
                           onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
-                          className="min-h-[100px] resize-none bg-gray-50 border-gray-200 rounded-2xl focus-visible:ring-primary p-4 shadow-sm"
+                          className="min-h-[70px] resize-none bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary p-3 shadow-sm text-sm"
                         />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-auto pt-6 pb-2">
+                  <div className="mt-auto pt-3 pb-1">
                     <Button 
                       onClick={nextStep}
                       disabled={!formData.name.trim() || !formData.username.trim() || !!usernameError || isCheckingUsername}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
                     >
                       Continue
                     </Button>
@@ -471,50 +471,47 @@ export default function Onboarding() {
               {/* Step 6: Completion */}
               {step === 6 && (
                 <div className="flex flex-col h-full">
-                  <div className="relative pt-8 flex-1 flex flex-col">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 bg-amber-400 text-amber-900 font-bold px-4 py-1.5 rounded-full text-sm inline-flex items-center shadow-lg transform -rotate-3 border border-amber-300">
-                      <span className="mr-1.5 text-base">🌟</span> +50 XP Earned
+                  <div className="relative pt-6 flex-1 flex flex-col">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 bg-primary text-white font-bold px-3 py-1 rounded-full text-xs inline-flex items-center shadow-lg transform -rotate-3">
+                      <span className="mr-1 text-sm">🌟</span> +50 XP Earned
                     </div>
                     
-                    <div className="text-center mb-8 mt-4">
-                      <h2 className="text-3xl font-display font-bold text-gray-900 mb-2">You're all set!</h2>
-                      <p className="text-gray-500">
-                        Here are some experiences near {formData.city || "you"} happening soon.
+                    <div className="text-center mb-4 mt-2">
+                      <h2 className="text-2xl font-display font-bold text-gray-900 mb-1">You're all set!</h2>
+                      <p className="text-gray-500 text-sm">
+                        Experiences near {formData.city || "you"} happening soon.
                       </p>
                     </div>
                     
-                    <div className="space-y-3 flex-1 overflow-y-auto pb-4 px-1">
+                    <div className="space-y-2 flex-1 pb-2 px-1">
                       {RECOMMENDATIONS.map((rec, i) => (
                         <motion.div 
                           key={rec.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 + i * 0.1 }}
-                          className="p-4 rounded-2xl border border-gray-100 shadow-sm bg-white hover:border-primary/20 hover:shadow-md transition-all group"
+                          className="p-3 rounded-xl border border-gray-100 shadow-sm bg-white hover:border-primary/20 hover:shadow-md transition-all group"
                         >
-                          <div>
-                            <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors">{rec.title}</h3>
-                            <div className="flex text-sm text-gray-500 mt-1.5 gap-2 items-center">
-                              <span className="flex items-center font-medium bg-gray-50 px-2 py-0.5 rounded text-gray-600"><MapPin className="w-3 h-3 mr-1" /> {rec.location}</span>
-                              <span className="text-gray-300">•</span>
-                              <span className="font-medium">{rec.day}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-gray-900 text-sm group-hover:text-primary transition-colors truncate">{rec.title}</h3>
+                              <div className="flex text-xs text-gray-500 mt-1 gap-1.5 items-center">
+                                <span className="flex items-center font-medium"><MapPin className="w-3 h-3 mr-0.5" /> {rec.location}</span>
+                                <span className="text-gray-300">•</span>
+                                <span className="font-medium">{rec.day}</span>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
-                            <span className="text-sm font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">+{rec.xp} XP</span>
-                            <Button variant="outline" size="sm" className="h-8 rounded-xl border-primary/20 text-primary hover:bg-primary hover:text-white transition-colors">
-                              View
-                            </Button>
+                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0 ml-2">+{rec.xp} XP</span>
                           </div>
                         </motion.div>
                       ))}
                     </div>
                   </div>
-                  <div className="mt-auto pt-4 bg-white z-10">
+                  <div className="mt-auto pt-3 bg-white z-10">
                     <Button 
                       onClick={handleComplete}
                       disabled={completeMutation.isPending}
-                      className="w-full h-14 text-lg bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 relative overflow-hidden group"
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 relative overflow-hidden group"
                     >
                       {completeMutation.isPending ? (
                         <Loader2 className="w-6 h-6 animate-spin" />

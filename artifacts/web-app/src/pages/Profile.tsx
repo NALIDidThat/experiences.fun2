@@ -124,7 +124,7 @@ export default function Profile() {
                     <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
                     <p className="text-primary font-medium text-lg">@{profile.username}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                      <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/15">
                         {getLevelLabel(level)}
                       </span>
                     </div>
@@ -195,7 +195,7 @@ export default function Profile() {
                   <div className="flex gap-6 sm:justify-end justify-center pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-200">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">
-                        {profile.upvote_count} <span className="text-amber-400 text-xl">&#8593;</span>
+                        {profile.upvote_count} <span className="text-primary text-xl">&#8593;</span>
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Upvotes</span>
                     </div>
@@ -271,7 +271,7 @@ export default function Profile() {
                           <span className="font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded text-xs">Completed</span>
                         )}
                         {exp.status !== "completed" && (
-                          <span className="font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs">Active</span>
+                          <span className="font-semibold text-primary/70 bg-primary/5 px-2 py-0.5 rounded text-xs">Active</span>
                         )}
                       </div>
                     </button>
@@ -340,7 +340,7 @@ export default function Profile() {
                           <MapPin className="w-3 h-3" /> {exp.city}
                         </span>
                         {exp.status === "completed" && exp.xp_earned > 0 && (
-                          <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+                          <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/15 flex items-center gap-1">
                             <Trophy className="w-3 h-3" /> +{exp.xp_earned} XP
                           </span>
                         )}
