@@ -606,10 +606,24 @@ components:
           nullable: true
         participant_count:
           type: integer
+        completion_count:
+          type: integer
         status:
           type: string
         creator:
           $ref: "#/components/schemas/ExperienceCreator"
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              username:
+                type: string
+            required:
+              - name
+              - username
         joined:
           type: boolean
         participation_status:
@@ -628,8 +642,10 @@ components:
         - country
         - xp_reward
         - participant_count
+        - completion_count
         - status
         - creator
+        - participants
         - joined
         - created_at
     ExperienceCreator:

@@ -146,12 +146,14 @@ router.post("/experiences", async (req: Request, res: Response): Promise<void> =
     xp_reward: experience.xp_reward,
     max_participants: experience.max_participants,
     participant_count: 0,
+    completion_count: 0,
     status: experience.status,
     creator: {
       id: req.currentUser.id,
       name: req.currentUser.name,
       username: req.currentUser.username,
     },
+    participants: [],
     joined: false,
     participation_status: null,
     created_at: experience.created_at.toISOString(),
@@ -187,6 +189,24 @@ router.get("/experiences/:id", async (req: Request, res: Response): Promise<void
     .from(experienceParticipantsTable)
     .where(eq(experienceParticipantsTable.experience_id, experience.id));
 
+  const [{ cCount }] = await db
+    .select({ cCount: count() })
+    .from(experienceParticipantsTable)
+    .where(
+      and(
+        eq(experienceParticipantsTable.experience_id, experience.id),
+        eq(experienceParticipantsTable.status, "completed")
+      )
+    );
+
+  const participantRows = await db
+    .select({ name: usersTable.name, username: usersTable.username })
+    .from(experienceParticipantsTable)
+    .innerJoin(usersTable, eq(experienceParticipantsTable.user_id, usersTable.id))
+    .where(eq(experienceParticipantsTable.experience_id, experience.id))
+    .orderBy(desc(experienceParticipantsTable.joined_at))
+    .limit(10);
+
   let joined = false;
   let participationStatus: string | null = null;
   if (req.currentUser) {
@@ -219,8 +239,10 @@ router.get("/experiences/:id", async (req: Request, res: Response): Promise<void
     xp_reward: experience.xp_reward,
     max_participants: experience.max_participants,
     participant_count: pCount,
+    completion_count: cCount,
     status: experience.status,
     creator: creator ? { id: creator.id, name: creator.name, username: creator.username } : { id: 0, name: "Unknown", username: "unknown" },
+    participants: participantRows,
     joined,
     participation_status: participationStatus,
     created_at: experience.created_at.toISOString(),

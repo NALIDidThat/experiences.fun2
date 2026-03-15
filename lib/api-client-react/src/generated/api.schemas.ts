@@ -175,6 +175,11 @@ export interface ExperienceCreator {
   username: string;
 }
 
+export interface ExperienceParticipant {
+  name: string;
+  username: string;
+}
+
 export interface ExperienceDetail {
   id: number;
   title: string;
@@ -187,8 +192,10 @@ export interface ExperienceDetail {
   xp_reward: number;
   max_participants?: number | null;
   participant_count: number;
+  completion_count: number;
   status: string;
   creator: ExperienceCreator;
+  participants: ExperienceParticipant[];
   joined: boolean;
   participation_status?: string | null;
   created_at: string;

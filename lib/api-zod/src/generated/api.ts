@@ -266,12 +266,17 @@ export const GetExperienceResponse = zod.object({
   xp_reward: zod.number(),
   max_participants: zod.number().nullish(),
   participant_count: zod.number(),
+  completion_count: zod.number(),
   status: zod.string(),
   creator: zod.object({
     id: zod.number(),
     name: zod.string(),
     username: zod.string(),
   }),
+  participants: zod.array(zod.object({
+    name: zod.string(),
+    username: zod.string(),
+  })),
   joined: zod.boolean(),
   participation_status: zod.string().nullish(),
   created_at: zod.string(),

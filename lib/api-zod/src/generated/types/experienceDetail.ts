@@ -8,6 +8,11 @@
 import type { ExperienceCreator } from "./experienceCreator";
 import type { ExperienceDetailType } from "./experienceDetailType";
 
+export interface ExperienceParticipantInfo {
+  name: string;
+  username: string;
+}
+
 export interface ExperienceDetail {
   id: number;
   title: string;
@@ -20,8 +25,10 @@ export interface ExperienceDetail {
   xp_reward: number;
   max_participants?: number | null;
   participant_count: number;
+  completion_count: number;
   status: string;
   creator: ExperienceCreator;
+  participants: ExperienceParticipantInfo[];
   joined: boolean;
   participation_status?: string | null;
   created_at: string;
