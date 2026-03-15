@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatingEmojis } from "@/components/FloatingEmojis";
+import { getSessionToken } from "@/lib/auth";
 
 const TUTORIAL_DONE_KEY = "tutorial_done";
 const TUTORIAL_STEP_KEY = "tutorial_step";
@@ -56,7 +57,7 @@ export default function AppTutorial() {
   const [direction, setDirection] = useState(1);
 
   useEffect(() => {
-    if (localStorage.getItem(TUTORIAL_DONE_KEY)) {
+    if (localStorage.getItem(TUTORIAL_DONE_KEY) || (getSessionToken() && !localStorage.getItem(TUTORIAL_STEP_KEY))) {
       setLocation("/home");
     }
   }, [setLocation]);
