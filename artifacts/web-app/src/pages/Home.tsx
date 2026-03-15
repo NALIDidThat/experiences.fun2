@@ -80,6 +80,7 @@ interface AiRec {
 
 function useAiRecommendations(enabled: boolean) {
   const [data, setData] = useState<AiRec[] | null>(null);
+  const [hasReflections, setHasReflections] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -88,12 +89,15 @@ function useAiRecommendations(enabled: boolean) {
     const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     fetch(`${base}/api/ai/recommendations`, { headers: getAuthHeaders() })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(d => setData(d.experiences || []))
+      .then(d => {
+        setHasReflections(!!d.has_reflections);
+        setData(d.has_reflections ? (d.experiences || []) : []);
+      })
       .catch(() => setData([]))
       .finally(() => setIsLoading(false));
   }, [enabled]);
 
-  return { data, isLoading };
+  return { data, isLoading, hasReflections };
 }
 
 interface MapExp {

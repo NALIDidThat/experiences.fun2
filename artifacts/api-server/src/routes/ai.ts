@@ -142,8 +142,22 @@ router.get("/ai/recommendations", async (req: Request, res: Response): Promise<v
   const joinedSet = new Set(joinedIds.map(j => j.experience_id));
   const candidates = allExperiences.filter(e => !joinedSet.has(e.id)).slice(0, 20);
 
+  const hasReflections = reflections.length > 0;
+
   if (candidates.length === 0) {
-    res.json({ experiences: [], reason: "No new experiences available." });
+    res.json({ experiences: [], has_reflections: hasReflections, reason: "No new experiences available." });
+    return;
+  }
+
+  if (!hasReflections) {
+    const fallback = candidates.slice(0, 10).map(e => ({
+      id: e.id, title: e.title, type: e.type, category: e.category,
+      date: e.date, city: e.city, xp_reward: e.xp_reward,
+      max_participants: e.max_participants, creator_name: e.creator_name,
+      creator_username: e.creator_username, participant_count: 0,
+      fit_score: 70, fit_reason: "Complete an experience and reflect to get personalized picks!",
+    }));
+    res.json({ experiences: fallback, has_reflections: false });
     return;
   }
 
@@ -226,7 +240,7 @@ Rank top 10. Higher score = better fit. Weight reflection moods heavily — if u
         };
       });
 
-    res.json({ experiences: result });
+    res.json({ experiences: result, has_reflections: true });
   } catch (err) {
     console.error("AI recommendations failed:", err);
     const fallback = candidates.slice(0, 10).map(e => ({
@@ -236,7 +250,7 @@ Rank top 10. Higher score = better fit. Weight reflection moods heavily — if u
       creator_username: e.creator_username, participant_count: 0,
       fit_score: 70, fit_reason: "Popular in your area",
     }));
-    res.json({ experiences: fallback });
+    res.json({ experiences: fallback, has_reflections: true });
   }
 });
 

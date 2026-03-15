@@ -273,10 +273,12 @@ export const GetExperienceResponse = zod.object({
     name: zod.string(),
     username: zod.string(),
   }),
-  participants: zod.array(zod.object({
-    name: zod.string(),
-    username: zod.string(),
-  })),
+  participants: zod.array(
+    zod.object({
+      name: zod.string(),
+      username: zod.string(),
+    }),
+  ),
   joined: zod.boolean(),
   participation_status: zod.string().nullish(),
   created_at: zod.string(),
@@ -307,6 +309,62 @@ export const CompleteExperienceResponse = zod.object({
   success: zod.boolean(),
   xp_earned: zod.number(),
   total_xp: zod.number(),
+});
+
+/**
+ * @summary Submit a mood reflection after an experience
+ */
+export const ReflectOnExperienceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ReflectOnExperienceBody = zod.object({
+  moods: zod.array(
+    zod.enum(["energised", "connected", "challenged", "relaxed"]),
+  ),
+  free_text: zod.string().nullish(),
+});
+
+/**
+ * Returns experiences ranked by AI based on user reflections and profile. Only meaningful when user has >= 1 reflection.
+ * @summary Get AI-personalized experience recommendations
+ */
+export const GetAiRecommendationsResponse = zod.object({
+  experiences: zod.array(
+    zod.object({
+      id: zod.number().optional(),
+      title: zod.string().optional(),
+      type: zod.string().optional(),
+      category: zod.string().optional(),
+      date: zod.string().optional(),
+      city: zod.string().optional(),
+      xp_reward: zod.number().optional(),
+      participant_count: zod.number().optional(),
+      fit_score: zod.number().optional(),
+      fit_reason: zod.string().optional(),
+    }),
+  ),
+  has_reflections: zod.boolean(),
+});
+
+/**
+ * Returns a natural-language summary of user preferences based on reflection history.
+ * @summary Get AI-generated preference summary
+ */
+export const GetAiInsightsResponse = zod.object({
+  summary: zod.string().nullish(),
+  last_updated: zod.string().nullish(),
+});
+
+/**
+ * @summary Check if user has reflected on an experience
+ */
+export const GetReflectionStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetReflectionStatusResponse = zod.object({
+  has_reflected: zod.boolean(),
 });
 
 /**

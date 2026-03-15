@@ -146,6 +146,7 @@ export interface ExperienceCard {
   category: string;
   date: string;
   city: string;
+  country: string;
   xp_reward: number;
   participant_count: number;
   max_participants?: number | null;
@@ -169,13 +170,13 @@ export const ExperienceDetailType = {
   professional: "professional",
 } as const;
 
-export interface ExperienceCreator {
-  id: number;
+export type ExperienceDetailParticipantsItem = {
   name: string;
   username: string;
-}
+};
 
-export interface ExperienceParticipant {
+export interface ExperienceCreator {
+  id: number;
   name: string;
   username: string;
 }
@@ -195,7 +196,7 @@ export interface ExperienceDetail {
   completion_count: number;
   status: string;
   creator: ExperienceCreator;
-  participants: ExperienceParticipant[];
+  participants: ExperienceDetailParticipantsItem[];
   joined: boolean;
   participation_status?: string | null;
   created_at: string;
@@ -255,6 +256,50 @@ export interface CompleteExperienceResponse {
   total_xp: number;
 }
 
+export type ReflectionRequestMoodsItem =
+  (typeof ReflectionRequestMoodsItem)[keyof typeof ReflectionRequestMoodsItem];
+
+export const ReflectionRequestMoodsItem = {
+  energised: "energised",
+  connected: "connected",
+  challenged: "challenged",
+  relaxed: "relaxed",
+} as const;
+
+export interface ReflectionRequest {
+  moods: ReflectionRequestMoodsItem[];
+  free_text?: string | null;
+}
+
+export interface ReflectionResponse {
+  id: number;
+  moods: string[];
+  created_at: string;
+}
+
+export type AiRecommendationsResponseExperiencesItem = {
+  id?: number;
+  title?: string;
+  type?: string;
+  category?: string;
+  date?: string;
+  city?: string;
+  xp_reward?: number;
+  participant_count?: number;
+  fit_score?: number;
+  fit_reason?: string;
+};
+
+export interface AiRecommendationsResponse {
+  experiences: AiRecommendationsResponseExperiencesItem[];
+  has_reflections: boolean;
+}
+
+export interface AiInsightsResponse {
+  summary?: string | null;
+  last_updated?: string | null;
+}
+
 export interface ErrorResponse {
   error: string;
   message: string;
@@ -278,5 +323,9 @@ export const ListExperiencesType = {
   personal: "personal",
   professional: "professional",
 } as const;
+
+export type GetReflectionStatus200 = {
+  has_reflected: boolean;
+};
 
 export type TelegramWebhookBody = { [key: string]: unknown };

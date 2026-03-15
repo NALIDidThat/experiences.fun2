@@ -18,6 +18,8 @@ tags:
     description: Experience operations
   - name: telegram
     description: Telegram webhook
+  - name: ai
+    description: AI personalization operations
 paths:
   /healthz:
     get:
@@ -286,6 +288,109 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CompleteExperienceResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /experiences/{id}/reflect:
+    post:
+      operationId: reflectOnExperience
+      tags: [ai]
+      summary: Submit a mood reflection after an experience
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReflectionRequest"
+      responses:
+        "201":
+          description: Reflection saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReflectionResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already reflected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /ai/recommendations:
+    get:
+      operationId: getAiRecommendations
+      tags: [ai]
+      summary: Get AI-personalized experience recommendations
+      description: Returns experiences ranked by AI based on user reflections and profile. Only meaningful when user has >= 1 reflection.
+      responses:
+        "200":
+          description: Recommendations list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiRecommendationsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /ai/insights:
+    get:
+      operationId: getAiInsights
+      tags: [ai]
+      summary: Get AI-generated preference summary
+      description: Returns a natural-language summary of user preferences based on reflection history.
+      responses:
+        "200":
+          description: Insights summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsightsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /ai/reflection-status/{id}:
+    get:
+      operationId: getReflectionStatus
+      tags: [ai]
+      summary: Check if user has reflected on an experience
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reflection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  has_reflected:
+                    type: boolean
+                required:
+                  - has_reflected
         "401":
           description: Not authenticated
           content:
@@ -728,6 +833,76 @@ components:
         - success
         - xp_earned
         - total_xp
+    ReflectionRequest:
+      type: object
+      properties:
+        moods:
+          type: array
+          items:
+            type: string
+            enum: [energised, connected, challenged, relaxed]
+        free_text:
+          type: string
+          nullable: true
+      required:
+        - moods
+    ReflectionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        moods:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+      required:
+        - id
+        - moods
+        - created_at
+    AiRecommendationsResponse:
+      type: object
+      properties:
+        experiences:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              type:
+                type: string
+              category:
+                type: string
+              date:
+                type: string
+              city:
+                type: string
+              xp_reward:
+                type: integer
+              participant_count:
+                type: integer
+              fit_score:
+                type: number
+              fit_reason:
+                type: string
+        has_reflections:
+          type: boolean
+      required:
+        - experiences
+        - has_reflections
+    AiInsightsResponse:
+      type: object
+      properties:
+        summary:
+          type: string
+          nullable: true
+        last_updated:
+          type: string
+          nullable: true
     ErrorResponse:
       type: object
       properties:

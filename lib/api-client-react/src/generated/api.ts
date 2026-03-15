@@ -17,16 +17,21 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AiInsightsResponse,
+  AiRecommendationsResponse,
   CompleteExperienceResponse,
   CreateExperienceRequest,
   ErrorResponse,
   ExperienceDetail,
   ExperienceList,
+  GetReflectionStatus200,
   HealthStatus,
   JoinExperienceResponse,
   ListExperiencesParams,
   OnboardingRequest,
   OnboardingResponse,
+  ReflectionRequest,
+  ReflectionResponse,
   TelegramWebhookBody,
   UpvoteResponse,
   UserProfile,
@@ -983,6 +988,332 @@ export const useCompleteExperience = <
 > => {
   return useMutation(getCompleteExperienceMutationOptions(options));
 };
+
+/**
+ * @summary Submit a mood reflection after an experience
+ */
+export const getReflectOnExperienceUrl = (id: number) => {
+  return `/api/experiences/${id}/reflect`;
+};
+
+export const reflectOnExperience = async (
+  id: number,
+  reflectionRequest: ReflectionRequest,
+  options?: RequestInit,
+): Promise<ReflectionResponse> => {
+  return customFetch<ReflectionResponse>(getReflectOnExperienceUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reflectionRequest),
+  });
+};
+
+export const getReflectOnExperienceMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reflectOnExperience>>,
+    TError,
+    { id: number; data: BodyType<ReflectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reflectOnExperience>>,
+  TError,
+  { id: number; data: BodyType<ReflectionRequest> },
+  TContext
+> => {
+  const mutationKey = ["reflectOnExperience"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reflectOnExperience>>,
+    { id: number; data: BodyType<ReflectionRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return reflectOnExperience(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReflectOnExperienceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reflectOnExperience>>
+>;
+export type ReflectOnExperienceMutationBody = BodyType<ReflectionRequest>;
+export type ReflectOnExperienceMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit a mood reflection after an experience
+ */
+export const useReflectOnExperience = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reflectOnExperience>>,
+    TError,
+    { id: number; data: BodyType<ReflectionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reflectOnExperience>>,
+  TError,
+  { id: number; data: BodyType<ReflectionRequest> },
+  TContext
+> => {
+  return useMutation(getReflectOnExperienceMutationOptions(options));
+};
+
+/**
+ * Returns experiences ranked by AI based on user reflections and profile. Only meaningful when user has >= 1 reflection.
+ * @summary Get AI-personalized experience recommendations
+ */
+export const getGetAiRecommendationsUrl = () => {
+  return `/api/ai/recommendations`;
+};
+
+export const getAiRecommendations = async (
+  options?: RequestInit,
+): Promise<AiRecommendationsResponse> => {
+  return customFetch<AiRecommendationsResponse>(getGetAiRecommendationsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAiRecommendationsQueryKey = () => {
+  return [`/api/ai/recommendations`] as const;
+};
+
+export const getGetAiRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAiRecommendations>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiRecommendations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAiRecommendationsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAiRecommendations>>
+  > = ({ signal }) => getAiRecommendations({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAiRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAiRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAiRecommendations>>
+>;
+export type GetAiRecommendationsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get AI-personalized experience recommendations
+ */
+
+export function useGetAiRecommendations<
+  TData = Awaited<ReturnType<typeof getAiRecommendations>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiRecommendations>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAiRecommendationsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns a natural-language summary of user preferences based on reflection history.
+ * @summary Get AI-generated preference summary
+ */
+export const getGetAiInsightsUrl = () => {
+  return `/api/ai/insights`;
+};
+
+export const getAiInsights = async (
+  options?: RequestInit,
+): Promise<AiInsightsResponse> => {
+  return customFetch<AiInsightsResponse>(getGetAiInsightsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAiInsightsQueryKey = () => {
+  return [`/api/ai/insights`] as const;
+};
+
+export const getGetAiInsightsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAiInsights>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAiInsightsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiInsights>>> = ({
+    signal,
+  }) => getAiInsights({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAiInsights>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAiInsightsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAiInsights>>
+>;
+export type GetAiInsightsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get AI-generated preference summary
+ */
+
+export function useGetAiInsights<
+  TData = Awaited<ReturnType<typeof getAiInsights>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiInsights>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAiInsightsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Check if user has reflected on an experience
+ */
+export const getGetReflectionStatusUrl = (id: number) => {
+  return `/api/ai/reflection-status/${id}`;
+};
+
+export const getReflectionStatus = async (
+  id: number,
+  options?: RequestInit,
+): Promise<GetReflectionStatus200> => {
+  return customFetch<GetReflectionStatus200>(getGetReflectionStatusUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReflectionStatusQueryKey = (id: number) => {
+  return [`/api/ai/reflection-status/${id}`] as const;
+};
+
+export const getGetReflectionStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReflectionStatus>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReflectionStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReflectionStatusQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReflectionStatus>>
+  > = ({ signal }) => getReflectionStatus(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReflectionStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReflectionStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReflectionStatus>>
+>;
+export type GetReflectionStatusQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Check if user has reflected on an experience
+ */
+
+export function useGetReflectionStatus<
+  TData = Awaited<ReturnType<typeof getReflectionStatus>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReflectionStatus>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReflectionStatusQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Receives updates from Telegram bot

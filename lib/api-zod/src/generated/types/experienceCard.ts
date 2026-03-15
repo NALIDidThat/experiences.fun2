@@ -14,6 +14,7 @@ export interface ExperienceCard {
   category: string;
   date: string;
   city: string;
+  country: string;
   xp_reward: number;
   participant_count: number;
   max_participants?: number | null;

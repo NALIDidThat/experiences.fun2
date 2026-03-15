@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./aiInsightsResponse";
+export * from "./aiRecommendationsResponse";
+export * from "./aiRecommendationsResponseExperiencesItem";
 export * from "./completeExperienceResponse";
 export * from "./createExperienceRequest";
 export * from "./createExperienceRequestType";
@@ -14,8 +17,10 @@ export * from "./experienceCard";
 export * from "./experienceCardType";
 export * from "./experienceCreator";
 export * from "./experienceDetail";
+export * from "./experienceDetailParticipantsItem";
 export * from "./experienceDetailType";
 export * from "./experienceList";
+export * from "./getReflectionStatus200";
 export * from "./healthStatus";
 export * from "./joinExperienceResponse";
 export * from "./listExperiencesParams";
@@ -23,6 +28,9 @@ export * from "./listExperiencesType";
 export * from "./onboardingRequest";
 export * from "./onboardingRequestRole";
 export * from "./onboardingResponse";
+export * from "./reflectionRequest";
+export * from "./reflectionRequestMoodsItem";
+export * from "./reflectionResponse";
 export * from "./telegramWebhookBody";
 export * from "./upvoteResponse";
 export * from "./userExperienceCard";

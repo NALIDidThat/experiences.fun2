@@ -6,12 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ExperienceCreator } from "./experienceCreator";
+import type { ExperienceDetailParticipantsItem } from "./experienceDetailParticipantsItem";
 import type { ExperienceDetailType } from "./experienceDetailType";
-
-export interface ExperienceParticipantInfo {
-  name: string;
-  username: string;
-}
 
 export interface ExperienceDetail {
   id: number;
@@ -28,7 +24,7 @@ export interface ExperienceDetail {
   completion_count: number;
   status: string;
   creator: ExperienceCreator;
-  participants: ExperienceParticipantInfo[];
+  participants: ExperienceDetailParticipantsItem[];
   joined: boolean;
   participation_status?: string | null;
   created_at: string;
