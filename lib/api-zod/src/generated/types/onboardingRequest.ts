@@ -36,4 +36,5 @@ export interface OnboardingRequest {
   /** @maxLength 500 */
   bio?: string | null;
   wallet_address?: string | null;
+  privy_id?: string | null;
 }

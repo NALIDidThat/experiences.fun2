@@ -58,7 +58,9 @@ function App() {
           logo: undefined,
         },
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          ethereum: {
+            createOnLogin: "users-without-wallets",
+          },
         },
       }}
     >

@@ -460,6 +460,9 @@ components:
         wallet_address:
           type: string
           nullable: true
+        privy_id:
+          type: string
+          nullable: true
       required:
         - name
         - username

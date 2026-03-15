@@ -234,6 +234,7 @@ export default function Onboarding() {
         bio: formData.bio || null,
         telegram_id: telegramId,
         wallet_address: walletAddress,
+        privy_id: privyId,
       }
     }, {
       onSuccess: (res) => {
