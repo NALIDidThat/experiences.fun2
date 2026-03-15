@@ -9,6 +9,8 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import ExperienceDetail from "./pages/ExperienceDetail";
 import CreateExperience from "./pages/CreateExperience";
+import Token from "./pages/Token";
+import Map from "./pages/Map";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +26,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Onboarding} />
       <Route path="/home" component={Home} />
+      <Route path="/token" component={Token} />
+      <Route path="/map" component={Map} />
       <Route path="/u/:username" component={Profile} />
       <Route path="/experience/:id" component={ExperienceDetail} />
       <Route path="/create" component={CreateExperience} />
