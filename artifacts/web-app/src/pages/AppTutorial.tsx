@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FloatingEmojis } from "@/components/FloatingEmojis";
 
 const TUTORIAL_DONE_KEY = "tutorial_done";
+const TUTORIAL_STEP_KEY = "tutorial_step";
 
 const SLIDES = [
   {
@@ -48,7 +49,10 @@ const SLIDES = [
 
 export default function AppTutorial() {
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => {
+    const saved = localStorage.getItem(TUTORIAL_STEP_KEY);
+    return saved ? Math.min(Number(saved), SLIDES.length - 1) : 0;
+  });
   const [direction, setDirection] = useState(1);
 
   useEffect(() => {
@@ -59,18 +63,23 @@ export default function AppTutorial() {
 
   const next = () => {
     if (step < SLIDES.length - 1) {
+      const nextStep = step + 1;
       setDirection(1);
-      setStep((s) => s + 1);
+      setStep(nextStep);
+      localStorage.setItem(TUTORIAL_STEP_KEY, String(nextStep));
     } else {
       localStorage.setItem(TUTORIAL_DONE_KEY, "1");
+      localStorage.removeItem(TUTORIAL_STEP_KEY);
       setLocation("/home");
     }
   };
 
   const prev = () => {
     if (step > 0) {
+      const prevStep = step - 1;
       setDirection(-1);
-      setStep((s) => s - 1);
+      setStep(prevStep);
+      localStorage.setItem(TUTORIAL_STEP_KEY, String(prevStep));
     }
   };
 
