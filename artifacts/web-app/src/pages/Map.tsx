@@ -5,11 +5,20 @@ import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { useListExperiences } from "@workspace/api-client-react";
 import { getAuthHeaders } from "@/lib/auth";
 
+interface MapExp {
+  id: number;
+  title: string;
+  category: string;
+  type: string;
+  date: string;
+  xp_reward: number;
+}
+
 interface GeoCity {
   city: string;
   lat: number;
   lon: number;
-  experiences: Array<{ id: number; title: string; category: string; xp_reward: number }>;
+  experiences: MapExp[];
 }
 
 const CATEGORY_EMOJIS: Record<string, string> = {
@@ -17,7 +26,10 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   entrepreneurship: "🚀", health: "💪", tech: "💻", events: "🎉",
 };
 
+const geocodeCache: Record<string, { lat: number; lon: number } | null> = {};
+
 async function geocodeCity(city: string): Promise<{ lat: number; lon: number } | null> {
+  if (city in geocodeCache) return geocodeCache[city];
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
@@ -25,9 +37,12 @@ async function geocodeCity(city: string): Promise<{ lat: number; lon: number } |
     );
     const data = await res.json();
     if (data?.[0]) {
-      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      geocodeCache[city] = result;
+      return result;
     }
   } catch {}
+  geocodeCache[city] = null;
   return null;
 }
 
@@ -52,10 +67,10 @@ export default function Map() {
   useEffect(() => {
     if (!data?.experiences?.length) return;
 
-    const byCity: Record<string, Array<{ id: number; title: string; category: string; xp_reward: number }>> = {};
+    const byCity: Record<string, MapExp[]> = {};
     for (const exp of data.experiences) {
       if (!byCity[exp.city]) byCity[exp.city] = [];
-      byCity[exp.city].push({ id: exp.id, title: exp.title, category: exp.category, xp_reward: exp.xp_reward });
+      byCity[exp.city].push({ id: exp.id, title: exp.title, category: exp.category, type: exp.type, date: exp.date, xp_reward: exp.xp_reward });
     }
 
     const fetchCoords = async () => {
@@ -82,6 +97,13 @@ export default function Map() {
       const L = (await import("leaflet")).default;
       await import("leaflet/dist/leaflet.css");
 
+      if (!document.getElementById("map-pulse-style")) {
+        const style = document.createElement("style");
+        style.id = "map-pulse-style";
+        style.textContent = `@keyframes pulse-glow { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.9; } }`;
+        document.head.appendChild(style);
+      }
+
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
@@ -94,8 +116,8 @@ export default function Map() {
       });
       leafletMap.current = map;
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
         maxZoom: 18,
       }).addTo(map);
 
@@ -103,15 +125,26 @@ export default function Map() {
       for (const city of cities) {
         const count = city.experiences.length;
         const size = Math.min(24 + count * 6, 56);
+        const hasProfessional = city.experiences.some(e => e.type === "professional");
+        const hasPersonal = city.experiences.some(e => e.type === "personal");
+        const gradient = hasProfessional && hasPersonal
+          ? "linear-gradient(135deg,#f20789,#6366f1)"
+          : hasProfessional
+            ? "linear-gradient(135deg,#6366f1,#818cf8)"
+            : "linear-gradient(135deg,#f20789,#e11d48)";
+        const shadow = hasProfessional && !hasPersonal
+          ? "0 2px 12px rgba(99,102,241,0.5), 0 0 20px rgba(99,102,241,0.2)"
+          : "0 2px 12px rgba(242,7,137,0.4), 0 0 20px rgba(242,7,137,0.2)";
         const icon = L.divIcon({
           html: `<div style="
             width:${size}px;height:${size}px;
-            background:linear-gradient(135deg,#f20789,#e11d48);
+            background:${gradient};
             border-radius:50%;border:3px solid white;
-            box-shadow:0 2px 12px rgba(242,7,137,0.4);
+            box-shadow:${shadow};
             display:flex;align-items:center;justify-content:center;
             color:white;font-weight:bold;font-size:${size > 36 ? 14 : 11}px;
             font-family:system-ui,sans-serif;
+            animation:pulse-glow 2s ease-in-out infinite;
           ">${count}</div>`,
           className: "",
           iconSize: [size, size],
@@ -163,6 +196,26 @@ export default function Map() {
           </div>
         </div>
 
+        {/* Legend */}
+        {!isLoading && !geocoding && cities.length > 0 && (
+          <div className="absolute top-16 right-4 z-[1000] bg-white/90 backdrop-blur-md rounded-xl px-3 py-2 shadow-lg">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-br from-[#f20789] to-[#e11d48]" />
+                <span className="text-[10px] font-medium text-gray-600">Personal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-br from-[#6366f1] to-[#818cf8]" />
+                <span className="text-[10px] font-medium text-gray-600">Professional</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-br from-[#f20789] to-[#6366f1]" />
+                <span className="text-[10px] font-medium text-gray-600">Mixed</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Loading state */}
         {(isLoading || geocoding) && (
           <div className="absolute inset-0 flex items-center justify-center z-[500] bg-gray-900/80 backdrop-blur-sm">
@@ -194,19 +247,32 @@ export default function Map() {
                   ×
                 </button>
               </div>
-              <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+              <div className="divide-y divide-gray-50 max-h-56 overflow-y-auto">
                 {selectedCity.experiences.map(exp => (
-                  <button
+                  <div
                     key={exp.id}
-                    onClick={() => setLocation(`/experience/${exp.id}`)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                    className="px-4 py-3 hover:bg-gray-50 transition-colors"
                   >
-                    <span className="text-xl shrink-0">{CATEGORY_EMOJIS[exp.category] || "📌"}</span>
-                    <span className="text-sm font-medium text-gray-900 flex-1 truncate">{exp.title}</span>
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
-                      +{exp.xp_reward} XP
-                    </span>
-                  </button>
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl shrink-0 mt-0.5">{CATEGORY_EMOJIS[exp.category] || "📌"}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{exp.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-xs text-gray-500">{exp.date}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${exp.type === "professional" ? "bg-indigo-100 text-indigo-600" : "bg-primary/10 text-primary"}`}>
+                            {exp.type === "professional" ? "Pro" : "Personal"}
+                          </span>
+                          <span className="text-xs font-bold text-primary">+{exp.xp_reward} XP</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setLocation(`/experience/${exp.id}`)}
+                        className="text-xs font-bold text-white bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg shrink-0 transition-colors"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
