@@ -46,6 +46,7 @@ export interface OnboardingRequest {
   role: OnboardingRequestRole;
   /** @maxLength 500 */
   bio?: string | null;
+  wallet_address?: string | null;
 }
 
 export interface UserProfile {

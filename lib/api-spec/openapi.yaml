@@ -457,6 +457,9 @@ components:
           type: string
           maxLength: 500
           nullable: true
+        wallet_address:
+          type: string
+          nullable: true
       required:
         - name
         - username

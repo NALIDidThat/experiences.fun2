@@ -52,7 +52,7 @@ export default function Onboarding() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState(1);
-  const { login, authenticated, user: privyUser, ready: privyReady } = usePrivy();
+  const { login, authenticated, user: privyUser, ready: privyReady, getAccessToken } = usePrivy();
   const [checkingExisting, setCheckingExisting] = useState(false);
   const [privyChecked, setPrivyChecked] = useState(false);
 
@@ -233,8 +233,8 @@ export default function Onboarding() {
         role: formData.participation as "join" | "host" | "both",
         bio: formData.bio || null,
         telegram_id: telegramId,
-        ...(walletAddress ? { wallet_address: walletAddress } : {}),
-      } as Record<string, unknown>
+        wallet_address: walletAddress,
+      }
     }, {
       onSuccess: (res) => {
         if (res.session_token) {

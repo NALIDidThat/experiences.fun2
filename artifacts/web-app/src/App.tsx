@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID || "cmmrbnh1u00220bjp8nm1dzqz";
+const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID;
 
 function Router() {
   return (

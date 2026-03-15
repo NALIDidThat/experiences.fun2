@@ -44,6 +44,7 @@ export const CompleteOnboardingBody = zod.object({
   interests: zod.array(zod.string().min(1)).min(1),
   role: zod.enum(["join", "host", "both"]),
   bio: zod.string().max(completeOnboardingBodyBioMax).nullish(),
+  wallet_address: zod.string().nullish(),
 });
 
 export const CompleteOnboardingResponse = zod.object({
