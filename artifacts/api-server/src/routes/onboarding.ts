@@ -36,6 +36,9 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
 
   const { name, username, city, country, interests, role, bio } = parsed.data;
 
+  const privyId: string | null = req.privyUserId || null;
+  const walletAddress: string | null = privyId ? ((req.body.wallet_address as string) || null) : null;
+
   let verifiedTelegramId: string | null = null;
   const telegramInitData = req.headers["x-telegram-init-data"];
   if (telegramInitData && typeof telegramInitData === "string") {
@@ -45,6 +48,57 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
       if (verification.valid && verification.user) {
         verifiedTelegramId = String(verification.user.id);
       }
+    }
+  }
+
+  if (privyId) {
+    const [existingByPrivy] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.privy_id, privyId))
+      .limit(1);
+
+    if (existingByPrivy) {
+      if (username !== existingByPrivy.username) {
+        const [conflict] = await db
+          .select({ id: usersTable.id })
+          .from(usersTable)
+          .where(eq(usersTable.username, username))
+          .limit(1);
+        if (conflict) {
+          res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+          return;
+        }
+      }
+
+      const session_token = existingByPrivy.session_token || randomBytes(32).toString("hex");
+
+      try {
+        const [updated] = await db
+          .update(usersTable)
+          .set({
+            name, username, city, country, interests, role,
+            bio: bio || null,
+            session_token,
+            wallet_address: walletAddress || existingByPrivy.wallet_address,
+            telegram_id: verifiedTelegramId || existingByPrivy.telegram_id,
+          })
+          .where(eq(usersTable.id, existingByPrivy.id))
+          .returning();
+
+        res.json(CompleteOnboardingResponse.parse({
+          success: true,
+          user: userToResponse(updated),
+          session_token,
+        }));
+      } catch (e: unknown) {
+        if (e && typeof e === "object" && "code" in e && e.code === "23505") {
+          res.status(409).json({ error: "username_taken", message: "This username is already taken" });
+          return;
+        }
+        throw e;
+      }
+      return;
     }
   }
 
@@ -73,7 +127,13 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
       try {
         const [updated] = await db
           .update(usersTable)
-          .set({ name, username, city, country, interests, role, bio: bio || null, session_token })
+          .set({
+            name, username, city, country, interests, role,
+            bio: bio || null,
+            session_token,
+            privy_id: privyId || existingByTelegram.privy_id,
+            wallet_address: walletAddress || existingByTelegram.wallet_address,
+          })
           .where(eq(usersTable.id, existingByTelegram.id))
           .returning();
 
@@ -109,7 +169,12 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
     try {
       const [updated] = await db
         .update(usersTable)
-        .set({ name, username, city, country, interests, role, bio: bio || null })
+        .set({
+          name, username, city, country, interests, role,
+          bio: bio || null,
+          privy_id: privyId || req.currentUser.privy_id,
+          wallet_address: walletAddress || req.currentUser.wallet_address,
+        })
         .where(eq(usersTable.id, req.currentUser.id))
         .returning();
 
@@ -153,6 +218,8 @@ router.post("/onboarding/complete", async (req: Request, res: Response): Promise
         role,
         bio: bio || null,
         telegram_id: verifiedTelegramId,
+        privy_id: privyId,
+        wallet_address: walletAddress,
         xp: 50,
         upvote_count: 0,
         session_token,

@@ -51,6 +51,7 @@ router.get("/users/me", async (req: Request, res: Response): Promise<void> => {
     bio: user.bio,
     xp: user.xp,
     upvote_count: user.upvote_count,
+    session_token: user.session_token,
     created_at: user.created_at?.toISOString(),
   });
 });

@@ -43,13 +43,14 @@ artifacts-monorepo/
 
 ## Key Features
 
-### Onboarding Flow (6 steps, one question per screen)
-1. Welcome — hero screen with "Start" CTA
+### Onboarding Flow (7 steps, one question per screen)
+1. Sign In — Privy login (email, wallet, or Telegram); returning users auto-redirect to /home
 2. Location — city + country inputs
 3. Interests — multi-select tile grid (8 categories)
 4. Participation — Join/Host/Both (auto-advances on selection)
-5. Profile — name, @username, optional bio (Telegram pre-fill if in Mini App)
-6. Completion — +50 XP celebration, 3 experience previews, "Explore" CTA
+5. Wallet — shows embedded wallet address (auto-created by Privy)
+6. Profile — name, @username, optional bio (Telegram/email pre-fill)
+7. Completion — +50 XP celebration, 3 experience previews, "Explore" CTA
 
 ### Experiences
 - **Discovery page** (/home) — list all experiences, filter by type (personal/professional), category, auto-filter by user's city when logged in
@@ -88,8 +89,8 @@ artifacts-monorepo/
 ## Database Schema
 
 ### users table
-- id (serial PK), telegram_id (unique, nullable), name, username (unique)
-- city, country, interests (text[]), role (join|host|both), bio (nullable)
+- id (serial PK), telegram_id (unique, nullable), privy_id (unique, nullable), wallet_address (nullable)
+- name, username (unique), city, country, interests (text[]), role (join|host|both), bio (nullable)
 - xp (default 0), upvote_count (default 0), session_token, created_at
 
 ### experiences table
@@ -118,14 +119,20 @@ artifacts-monorepo/
 
 ## Authentication
 
-### Dual-mode auth
+### Triple-mode auth (Privy + Session Token + Telegram)
+- **Privy auth (primary)**: `@privy-io/react-auth` on frontend, `@privy-io/server-auth` on backend. Supports email, wallet, and Telegram login. Bearer token is Privy JWT; backend verifies via `PrivyClient.verifyAuthToken()`, looks up user by `privy_id` column.
+- **Session token (fallback)**: `Authorization: Bearer <session_token>` header; session token stored in localStorage after onboarding
 - **Telegram Mini App**: `X-Telegram-Init-Data` header verified server-side with HMAC
-- **Standalone web**: `Authorization: Bearer <session_token>` header; session token stored in localStorage after onboarding
 
 ### Auth middleware
 - `optionalAuth` middleware (`api-server/src/lib/auth-middleware.ts`) runs on all routes
-- Reads Bearer token from Authorization header, looks up user by `session_token` column
-- Sets `req.currentUser` if found (undefined otherwise)
+- Priority: (1) Bearer token → try session_token lookup → try Privy JWT verification → (2) Telegram initData fallback
+- Sets `req.currentUser` if found, `req.privyUserId` if Privy-authenticated but no profile yet
+
+### Privy configuration
+- Frontend: `<PrivyProvider>` wraps the app with `loginMethods: ["email", "wallet", "telegram"]`, accent color `#f20789`, embedded wallets auto-created
+- `PrivyAuthSync` component syncs Privy access tokens to `auth.ts` module every 30s
+- `auth.ts` `getAuthHeaders()` prefers Privy token over session_token
 
 ### Edit profile flow
 - Standalone users with a session token can re-enter onboarding to edit their profile
@@ -156,6 +163,8 @@ artifacts-monorepo/
 - `MINI_APP_URL` — Published Replit domain for webhook + menu button setup
 - `DATABASE_URL` — Auto-provided by Replit
 - `PORT` — Auto-assigned per artifact
+- `VITE_PRIVY_APP_ID` — Privy app ID (public, used in frontend PrivyProvider)
+- `PRIVY_APP_SECRET` — Privy app secret (backend only, for JWT verification)
 
 ## TypeScript & Composite Projects
 
