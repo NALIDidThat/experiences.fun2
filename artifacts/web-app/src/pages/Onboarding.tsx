@@ -67,8 +67,9 @@ export default function Onboarding() {
   });
 
   const hasSession = !!getSessionToken();
-  const isEditMode = hasSession && !authenticated;
+  const isEditMode = hasSession;
   const [originalUsername, setOriginalUsername] = useState<string>("");
+  const [legacyChecked, setLegacyChecked] = useState(false);
 
   const currentUserQuery = { enabled: hasSession || (authenticated && !!getPrivyAccessToken()) };
   const currentUserResult = useGetCurrentUser({
@@ -79,6 +80,24 @@ export default function Onboarding() {
   const completeMutation = useCompleteOnboarding({
     request: { headers: getAuthHeaders() }
   });
+
+  useEffect(() => {
+    if (hasSession && !legacyChecked && !authenticated) {
+      setLegacyChecked(true);
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      fetch(`${base}/api/users/me`, { headers: getAuthHeaders() })
+        .then(res => {
+          if (res.ok) return res.json();
+          return null;
+        })
+        .then(user => {
+          if (user && user.username) {
+            setLocation("/home");
+          }
+        })
+        .catch(() => {});
+    }
+  }, [hasSession, legacyChecked, authenticated, setLocation]);
 
   useEffect(() => {
     if (currentUserResult.data && isEditMode) {
