@@ -533,6 +533,8 @@ components:
           type: string
         city:
           type: string
+        country:
+          type: string
         xp_reward:
           type: integer
         participant_count:
@@ -553,6 +555,7 @@ components:
         - category
         - date
         - city
+        - country
         - xp_reward
         - participant_count
         - creator_name

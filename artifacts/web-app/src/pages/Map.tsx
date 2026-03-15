@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { getAuthHeaders } from "@/lib/auth";
 import { geocodeCity } from "@/lib/geocode";
+import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 
 interface MapExp {
   id: number;
@@ -71,8 +72,8 @@ export default function Map() {
   const [selectedCity, setSelectedCity] = useState<GeoCity | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const leafletMap = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[]>([]);
   const idlePanRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: experiences, isLoading } = useAllExperiences();
@@ -81,21 +82,20 @@ export default function Map() {
     if (!experiences?.length) return;
     setTotalCount(experiences.length);
 
-    const byCity: Record<string, MapExp[]> = {};
+    const byKey: Record<string, { city: string; country: string; experiences: MapExp[] }> = {};
     for (const exp of experiences) {
-      const key = exp.city;
-      if (!byCity[key]) byCity[key] = [];
-      byCity[key].push(exp);
+      const key = `${exp.city.toLowerCase()},${exp.country.toLowerCase()}`;
+      if (!byKey[key]) byKey[key] = { city: exp.city, country: exp.country, experiences: [] };
+      byKey[key].experiences.push(exp);
     }
 
     const fetchCoords = async () => {
       setGeocoding(true);
       const results: GeoCity[] = [];
-      for (const cityName of Object.keys(byCity)) {
-        const sampleExp = byCity[cityName][0];
-        const coords = await geocodeCity(cityName, sampleExp.country);
+      for (const group of Object.values(byKey)) {
+        const coords = await geocodeCity(group.city, group.country);
         if (coords) {
-          results.push({ city: cityName, lat: coords.lat, lon: coords.lon, experiences: byCity[cityName] });
+          results.push({ city: group.city, lat: coords.lat, lon: coords.lon, experiences: group.experiences });
         }
       }
       setCities(results);

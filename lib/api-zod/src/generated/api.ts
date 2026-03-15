@@ -196,6 +196,7 @@ export const ListExperiencesResponse = zod.object({
       category: zod.string(),
       date: zod.string(),
       city: zod.string(),
+      country: zod.string(),
       xp_reward: zod.number(),
       participant_count: zod.number(),
       max_participants: zod.number().nullish(),
