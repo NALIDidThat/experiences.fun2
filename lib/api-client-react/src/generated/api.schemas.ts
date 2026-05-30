@@ -48,6 +48,10 @@ export interface OnboardingRequest {
   bio?: string | null;
   wallet_address?: string | null;
   privy_id?: string | null;
+  user_type?: "student" | "educator" | null;
+  /** @maxLength 100 */
+  node_name?: string | null;
+  node_type?: string | null;
 }
 
 export interface UserProfile {
@@ -62,6 +66,10 @@ export interface UserProfile {
   xp: number;
   upvote_count: number;
   created_at: string;
+  user_type?: string | null;
+  node_name?: string | null;
+  node_type?: string | null;
+  telegram_group_id?: string | null;
 }
 
 export interface OnboardingResponse {

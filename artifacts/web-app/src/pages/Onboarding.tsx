@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Check, MapPin, Loader2, Wallet, Mail } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, MapPin, Loader2, Wallet, Mail, GraduationCap, School } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { usePrivy } from "@privy-io/react-auth";
 
@@ -13,13 +13,16 @@ import { getTelegramUser } from "@/lib/telegram";
 import { setSessionToken, getSessionToken, getAuthHeaders, getPrivyAccessToken, setPrivyAccessToken } from "@/lib/auth";
 import { useCompleteOnboarding, useCheckUsername, useGetCurrentUser } from "@workspace/api-client-react";
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface FormData {
+  userType: "student" | "educator" | "";
   city: string;
   country: string;
   interests: string[];
   participation: "join" | "host" | "both" | "";
+  nodeName: string;
+  nodeType: string;
   name: string;
   username: string;
   bio: string;
@@ -42,6 +45,15 @@ const PARTICIPATION_OPTIONS = [
   { id: "both", title: "Both", description: "Join and host" },
 ] as const;
 
+const NODE_TYPES = [
+  { id: "school", label: "School", icon: "🏫" },
+  { id: "library", label: "Library", icon: "📚" },
+  { id: "university", label: "University", icon: "🎓" },
+  { id: "company", label: "Company", icon: "🏢" },
+  { id: "community_center", label: "Community Centre", icon: "🏘️" },
+  { id: "city", label: "City / Region", icon: "🌆" },
+];
+
 const RECOMMENDATIONS = [
   { id: 1, title: "Community Tree Planting", location: "City Park", day: "Saturday", xp: 100 },
   { id: 2, title: "Tech Mentoring Drop-in", location: "Downtown Library", day: "Tuesday", xp: 150 },
@@ -57,10 +69,13 @@ export default function Onboarding() {
   const [privyChecked, setPrivyChecked] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
+    userType: "",
     city: "",
     country: "",
     interests: [],
     participation: "",
+    nodeName: "",
+    nodeType: "",
     name: "",
     username: "",
     bio: "",
@@ -92,7 +107,7 @@ export default function Onboarding() {
         })
         .then(user => {
           if (user && user.username) {
-            setLocation("/home");
+            setLocation(user.user_type === "educator" ? "/node-dashboard" : "/home");
           }
         })
         .catch(() => {});
@@ -105,6 +120,7 @@ export default function Onboarding() {
       setOriginalUsername(u.username);
       setFormData(prev => ({
         ...prev,
+        userType: (u.user_type as "student" | "educator") || "student",
         name: u.name,
         username: u.username,
         city: u.city,
@@ -112,6 +128,8 @@ export default function Onboarding() {
         interests: u.interests,
         participation: u.role as "join" | "host" | "both",
         bio: u.bio || "",
+        nodeName: u.node_name || "",
+        nodeType: u.node_type || "",
       }));
     }
   }, [currentUserResult.data, isEditMode]);
@@ -123,9 +141,7 @@ export default function Onboarding() {
 
     try {
       const token = await getAccessToken();
-      if (token) {
-        setPrivyAccessToken(token);
-      }
+      if (token) setPrivyAccessToken(token);
     } catch {}
 
     await new Promise(r => setTimeout(r, 500));
@@ -137,7 +153,7 @@ export default function Onboarding() {
         const user = await res.json();
         if (user && user.username) {
           setSessionToken(user.session_token || "");
-          setLocation("/home");
+          setLocation(user.user_type === "educator" ? "/node-dashboard" : "/home");
           return;
         }
       }
@@ -190,7 +206,7 @@ export default function Onboarding() {
 
   const [debouncedUsername] = useDebounce(formData.username, 500);
   const isOwnUsername = isEditMode && debouncedUsername === originalUsername;
-  const checkUsernameQuery = { enabled: debouncedUsername.length > 2 && step === 6 && !isOwnUsername };
+  const checkUsernameQuery = { enabled: debouncedUsername.length > 2 && step === 7 && !isOwnUsername };
   const checkUsernameResult = useCheckUsername(debouncedUsername, {
     query: checkUsernameQuery as typeof checkUsernameQuery & { queryKey: readonly unknown[] },
     request: { headers: getAuthHeaders() }
@@ -203,7 +219,7 @@ export default function Onboarding() {
     : (usernameData && !usernameData.available && !isOwnUsername ? "Username is already taken" : null);
 
   const nextStep = () => {
-    if (step < 7) {
+    if (step < 8) {
       setDirection(1);
       setStep((step + 1) as Step);
     }
@@ -241,6 +257,7 @@ export default function Onboarding() {
     const privyId = getPrivyId();
     const walletAddress = getPrivyWalletAddress();
     const telegramId = getTelegramUser()?.id.toString() || null;
+    const isEducator = formData.userType === "educator";
 
     completeMutation.mutate({
       data: {
@@ -249,19 +266,20 @@ export default function Onboarding() {
         city: formData.city,
         country: formData.country,
         interests: formData.interests,
-        role: formData.participation as "join" | "host" | "both",
+        role: isEducator ? "host" : (formData.participation as "join" | "host" | "both"),
         bio: formData.bio || null,
         telegram_id: telegramId,
         wallet_address: walletAddress,
         privy_id: privyId,
+        user_type: formData.userType || "student",
+        node_name: isEducator ? formData.nodeName || null : null,
+        node_type: isEducator ? formData.nodeType || null : null,
       }
     }, {
       onSuccess: (res) => {
-        if (res.session_token) {
-          setSessionToken(res.session_token);
-        }
+        if (res.session_token) setSessionToken(res.session_token);
         if (isEditMode) {
-          setLocation("/home");
+          setLocation(isEducator ? "/node-dashboard" : "/home");
         } else {
           setLocation("/tutorial");
         }
@@ -289,7 +307,8 @@ export default function Onboarding() {
     })
   };
 
-  const totalSteps = 7;
+  const totalSteps = 8;
+  const isEducator = formData.userType === "educator";
 
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-br from-pink-600 via-primary to-rose-600 flex flex-col items-center justify-end md:justify-center overflow-hidden font-sans relative">
@@ -336,6 +355,7 @@ export default function Onboarding() {
               className="absolute inset-0 p-4 md:p-8 flex flex-col overflow-y-auto overflow-x-hidden"
             >
 
+              {/* Step 1 — Login */}
               {step === 1 && (
                 <div className="flex flex-col h-full justify-center">
                   {checkingExisting ? (
@@ -354,7 +374,7 @@ export default function Onboarding() {
                           Welcome to <span className="text-primary">experiences.fun</span>
                         </h1>
                         <p className="text-gray-500 text-base leading-relaxed px-2">
-                          Join real-world experiences, connect with locals, and build your community reputation.
+                          Coordinate real-world experiences that generate educational, environmental, and economic impact.
                         </p>
                       </div>
                       <div className="mt-auto space-y-3">
@@ -374,7 +394,78 @@ export default function Onboarding() {
                 </div>
               )}
 
+              {/* Step 2 — User Type */}
               {step === 2 && (
+                <div className="flex flex-col h-full">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">Who are you?</h2>
+                    <p className="text-gray-500 text-sm mb-5">
+                      Tell us how you'll use experiences.fun
+                    </p>
+
+                    <div className="space-y-3">
+                      {[
+                        {
+                          id: "student" as const,
+                          icon: <GraduationCap className="w-7 h-7 text-primary" />,
+                          title: "Student / Explorer",
+                          description: "Join experiences, learn, grow, and build your reputation in the community",
+                        },
+                        {
+                          id: "educator" as const,
+                          icon: <School className="w-7 h-7 text-primary" />,
+                          title: "Educator / Node Creator",
+                          description: "Create experiences, coordinate your community, and track real-world impact",
+                        },
+                      ].map((option) => {
+                        const isSelected = formData.userType === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => {
+                              setFormData(p => ({ ...p, userType: option.id }));
+                              setTimeout(nextStep, 350);
+                            }}
+                            className={cn(
+                              "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-4 group",
+                              isSelected
+                                ? "border-primary bg-primary/5 shadow-md scale-[1.01]"
+                                : "border-gray-100 bg-white hover:border-primary/30 hover:bg-gray-50"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
+                              isSelected ? "bg-primary/10" : "bg-gray-50 group-hover:bg-primary/5"
+                            )}>
+                              {option.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={cn(
+                                "font-bold text-base mb-0.5 transition-colors",
+                                isSelected ? "text-primary" : "text-gray-900"
+                              )}>
+                                {option.title}
+                              </div>
+                              <div className="text-sm text-gray-500 leading-snug">
+                                {option.description}
+                              </div>
+                            </div>
+                            <div className={cn(
+                              "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all",
+                              isSelected ? "border-primary bg-primary" : "border-gray-300"
+                            )}>
+                              <Check className={cn("w-3 h-3 text-white", isSelected ? "opacity-100" : "opacity-0")} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3 — Location */}
+              {step === 3 && (
                 <div className="flex flex-col h-full">
                   {authenticated && (
                     <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
@@ -429,7 +520,8 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 3 && (
+              {/* Step 4 — Interests */}
+              {step === 4 && (
                 <div className="flex flex-col h-full">
                   <div>
                     <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">What interests you?</h2>
@@ -458,9 +550,7 @@ export default function Onboarding() {
                             )}>
                               {interest.label}
                             </span>
-                            {isSelected && (
-                              <div className="absolute inset-0 bg-primary/5 z-0" />
-                            )}
+                            {isSelected && <div className="absolute inset-0 bg-primary/5 z-0" />}
                           </button>
                         );
                       })}
@@ -478,7 +568,8 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 4 && (
+              {/* Step 5 — Conditional: Participation (student) or Node Setup (educator) */}
+              {step === 5 && !isEducator && (
                 <div className="flex flex-col h-full">
                   <div>
                     <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-4">How do you want to participate?</h2>
@@ -503,7 +594,7 @@ export default function Onboarding() {
                             <div>
                               <div className={cn(
                                 "font-bold text-base mb-0.5 transition-colors",
-                                isSelected ? "text-primary" : "text-gray-900 group-hover:text-gray-900"
+                                isSelected ? "text-primary" : "text-gray-900"
                               )}>
                                 {option.title}
                               </div>
@@ -518,10 +609,7 @@ export default function Onboarding() {
                               "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
                               isSelected ? "border-primary bg-primary" : "border-gray-300 group-hover:border-primary/50"
                             )}>
-                              <Check className={cn(
-                                "w-3.5 h-3.5 text-white transition-opacity",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )} />
+                              <Check className={cn("w-3.5 h-3.5 text-white", isSelected ? "opacity-100" : "opacity-0")} />
                             </div>
                           </button>
                         );
@@ -531,7 +619,66 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 5 && (
+              {step === 5 && isEducator && (
+                <div className="flex flex-col h-full">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">Set up your Node</h2>
+                    <p className="text-gray-500 text-sm mb-5">
+                      Your node is your real-world hub on experiences.fun
+                    </p>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-gray-700 ml-1">Node Name</label>
+                        <Input
+                          placeholder="e.g. Greenwood Academy"
+                          value={formData.nodeName}
+                          onChange={(e) => setFormData(p => ({ ...p, nodeName: e.target.value }))}
+                          className="h-12 bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary text-base px-4 shadow-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700 ml-1">Node Type</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {NODE_TYPES.map((type) => {
+                            const isSelected = formData.nodeType === type.id;
+                            return (
+                              <button
+                                key={type.id}
+                                onClick={() => setFormData(p => ({ ...p, nodeType: type.id }))}
+                                className={cn(
+                                  "flex items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 text-left",
+                                  isSelected
+                                    ? "border-primary bg-primary/5 shadow-sm"
+                                    : "border-gray-100 bg-white hover:border-gray-200"
+                                )}
+                              >
+                                <span className="text-xl">{type.icon}</span>
+                                <span className={cn(
+                                  "text-sm font-semibold",
+                                  isSelected ? "text-primary" : "text-gray-700"
+                                )}>{type.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-auto pt-4">
+                    <Button
+                      onClick={nextStep}
+                      disabled={!formData.nodeName.trim() || !formData.nodeType}
+                      className="w-full h-12 text-base bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 disabled:opacity-50 disabled:shadow-none"
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 6 — Wallet */}
+              {step === 6 && (
                 <div className="flex flex-col h-full">
                   <div className="text-center mb-4">
                     <div className="w-14 h-14 bg-primary/10 rounded-2xl mx-auto mb-3 flex items-center justify-center">
@@ -570,7 +717,8 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 6 && (
+              {/* Step 7 — Profile */}
+              {step === 7 && (
                 <div className="flex flex-col h-full">
                   <div>
                     <h2 className="text-xl md:text-2xl font-display font-bold text-gray-900 mb-1">Create your profile</h2>
@@ -606,17 +754,18 @@ export default function Onboarding() {
                             <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-gray-400" />
                           )}
                         </div>
-                        {usernameError && (
-                          <p className="text-sm text-red-500 ml-1">{usernameError}</p>
-                        )}
+                        {usernameError && <p className="text-sm text-red-500 ml-1">{usernameError}</p>}
                         {usernameData?.available && !usernameError && (
                           <p className="text-sm text-green-600 ml-1">Username is available!</p>
                         )}
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-gray-700 ml-1">Short bio <span className="text-gray-400 font-normal">(optional)</span></label>
+                        <label className="text-sm font-semibold text-gray-700 ml-1">
+                          {isEducator ? "Node description" : "Short bio"}{" "}
+                          <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
                         <Textarea
-                          placeholder="Passionate about the environment..."
+                          placeholder={isEducator ? "What does your node focus on?" : "Passionate about the environment..."}
                           value={formData.bio}
                           onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
                           className="min-h-[70px] resize-none bg-gray-50 border-gray-200 rounded-xl focus-visible:ring-primary p-3 shadow-sm text-sm"
@@ -636,7 +785,8 @@ export default function Onboarding() {
                 </div>
               )}
 
-              {step === 7 && (
+              {/* Step 8 — Welcome + XP */}
+              {step === 8 && (
                 <div className="flex flex-col h-full">
                   <div className="relative pt-6 flex-1 flex flex-col">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 bg-primary text-white font-bold px-3 py-1 rounded-full text-xs inline-flex items-center shadow-lg transform -rotate-3">
@@ -644,9 +794,14 @@ export default function Onboarding() {
                     </div>
 
                     <div className="text-center mb-4 mt-2">
-                      <h2 className="text-2xl font-display font-bold text-gray-900 mb-1">You're all set!</h2>
+                      <h2 className="text-2xl font-display font-bold text-gray-900 mb-1">
+                        {isEducator ? "Your node is live!" : "You're all set!"}
+                      </h2>
                       <p className="text-gray-500 text-sm">
-                        Experiences near {formData.city || "you"} happening soon.
+                        {isEducator
+                          ? `${formData.nodeName || "Your node"} is now part of the experiences.fun network.`
+                          : `Experiences near ${formData.city || "you"} happening soon.`
+                        }
                       </p>
                     </div>
 
@@ -684,7 +839,9 @@ export default function Onboarding() {
                         <Loader2 className="w-6 h-6 animate-spin" />
                       ) : (
                         <>
-                          <span className="relative z-10 font-bold">Explore Experiences</span>
+                          <span className="relative z-10 font-bold">
+                            {isEducator ? "Go to your Node Dashboard" : "Explore Experiences"}
+                          </span>
                           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                         </>
                       )}

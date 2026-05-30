@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { usersTable, experiencesTable, experienceParticipantsTable, upvotesTable } from "@workspace/db";
 import {
@@ -9,6 +9,7 @@ import {
   ToggleUpvoteParams,
   ToggleUpvoteResponse,
 } from "@workspace/api-zod";
+import { sendDM } from "../lib/telegram-notify";
 
 const router: IRouter = Router();
 
@@ -53,6 +54,10 @@ router.get("/users/me", async (req: Request, res: Response): Promise<void> => {
     upvote_count: user.upvote_count,
     session_token: user.session_token,
     created_at: user.created_at?.toISOString(),
+    user_type: user.user_type,
+    node_name: user.node_name,
+    node_type: user.node_type,
+    telegram_group_id: user.telegram_group_id,
   });
 });
 
@@ -225,10 +230,109 @@ router.post("/users/:username/upvote", async (req: Request, res: Response): Prom
     .where(eq(usersTable.id, targetUser.id))
     .limit(1);
 
+  if (upvoted && targetUser.telegram_id) {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (botToken) {
+      await sendDM(
+        botToken,
+        targetUser.telegram_id,
+        `👍 *${req.currentUser.name}* gave you an upvote on experiences.fun!`,
+      );
+    }
+  }
+
   res.json(ToggleUpvoteResponse.parse({
     upvoted,
     upvote_count: updatedTarget.upvote_count,
   }));
+});
+
+router.get("/users/me/node-stats", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const userId = req.currentUser.id;
+
+  const [stats] = await db
+    .select({
+      total_experiences: count(experiencesTable.id),
+      total_participants: sql<number>`COUNT(DISTINCT ${experienceParticipantsTable.user_id})`,
+      total_completions: sql<number>`COUNT(CASE WHEN ${experienceParticipantsTable.status} = 'completed' THEN 1 END)`,
+      total_xp_distributed: sql<number>`COALESCE(SUM(CASE WHEN ${experienceParticipantsTable.status} = 'completed' THEN ${experiencesTable.xp_reward} ELSE 0 END), 0)`,
+    })
+    .from(experiencesTable)
+    .leftJoin(experienceParticipantsTable, eq(experienceParticipantsTable.experience_id, experiencesTable.id))
+    .where(eq(experiencesTable.creator_id, userId));
+
+  const experienceRows = await db
+    .select({
+      id: experiencesTable.id,
+      title: experiencesTable.title,
+      type: experiencesTable.type,
+      category: experiencesTable.category,
+      date: experiencesTable.date,
+      status: experiencesTable.status,
+      xp_reward: experiencesTable.xp_reward,
+      participant_count: sql<number>`COUNT(${experienceParticipantsTable.id})`,
+      completion_count: sql<number>`COUNT(CASE WHEN ${experienceParticipantsTable.status} = 'completed' THEN 1 END)`,
+    })
+    .from(experiencesTable)
+    .leftJoin(experienceParticipantsTable, eq(experienceParticipantsTable.experience_id, experiencesTable.id))
+    .where(eq(experiencesTable.creator_id, userId))
+    .groupBy(experiencesTable.id)
+    .orderBy(experiencesTable.id);
+
+  res.json({
+    total_experiences: Number(stats?.total_experiences ?? 0),
+    total_participants: Number(stats?.total_participants ?? 0),
+    total_completions: Number(stats?.total_completions ?? 0),
+    total_xp_distributed: Number(stats?.total_xp_distributed ?? 0),
+    experiences: experienceRows.map(e => ({
+      id: e.id,
+      title: e.title,
+      type: e.type,
+      category: e.category,
+      date: e.date,
+      status: e.status,
+      xp_reward: e.xp_reward,
+      participant_count: Number(e.participant_count),
+      completion_count: Number(e.completion_count),
+    })),
+  });
+});
+
+router.post("/users/me/link-group", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const { telegram_group_id } = req.body as { telegram_group_id?: string };
+  if (!telegram_group_id || typeof telegram_group_id !== "string") {
+    res.status(400).json({ error: "validation_error", message: "telegram_group_id is required" });
+    return;
+  }
+
+  await db
+    .update(usersTable)
+    .set({ telegram_group_id })
+    .where(eq(usersTable.id, req.currentUser.id));
+
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const miniAppUrl = process.env.MINI_APP_URL;
+  const nodeName = req.currentUser.node_name || req.currentUser.name;
+  if (botToken) {
+    const appLink = miniAppUrl ? `\n\nOpen: ${miniAppUrl}` : "";
+    await sendDM(
+      botToken,
+      telegram_group_id,
+      `✅ This group is now linked to *${nodeName}* on experiences.fun! New experiences and completions will be announced here.${appLink}`,
+    );
+  }
+
+  res.json({ success: true, telegram_group_id });
 });
 
 export default router;

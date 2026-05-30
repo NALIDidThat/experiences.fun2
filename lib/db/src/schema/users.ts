@@ -18,6 +18,10 @@ export const usersTable = pgTable("users", {
   upvote_count: integer("upvote_count").notNull().default(0),
   token_interest: boolean("token_interest").notNull().default(false),
   session_token: text("session_token"),
+  user_type: text("user_type").notNull().default("student"),
+  node_name: text("node_name"),
+  node_type: text("node_type"),
+  telegram_group_id: text("telegram_group_id"),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
