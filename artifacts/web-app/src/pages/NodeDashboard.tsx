@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   Plus, Heart, MapPin, Users, CheckCircle, Star, AlertTriangle,
   Link, ExternalLink, Loader2, School, GraduationCap, Building2,
-  BookOpen, Home, Globe
+  BookOpen, Home, Globe, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -181,6 +181,13 @@ export default function NodeDashboard() {
                 className="text-xs text-primary font-medium flex items-center gap-1 hover:underline"
               >
                 Profile <ExternalLink className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => setLocation("/settings")}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4" />
               </button>
             </div>
           </div>

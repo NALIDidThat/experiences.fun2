@@ -247,6 +247,53 @@ router.post("/users/:username/upvote", async (req: Request, res: Response): Prom
   }));
 });
 
+router.patch("/users/me", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const { name, bio, city, country, node_name, node_type } = req.body as {
+    name?: string; bio?: string; city?: string; country?: string;
+    node_name?: string; node_type?: string;
+  };
+
+  const updates: Partial<typeof usersTable.$inferInsert> = {};
+  if (name?.trim()) updates.name = name.trim();
+  if (bio !== undefined) updates.bio = bio?.trim() || null;
+  if (city?.trim()) updates.city = city.trim();
+  if (country?.trim()) updates.country = country.trim();
+  if (node_name !== undefined) updates.node_name = node_name?.trim() || null;
+  if (node_type !== undefined) updates.node_type = node_type?.trim() || null;
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "validation_error", message: "No valid fields to update" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(usersTable)
+    .set(updates)
+    .where(eq(usersTable.id, req.currentUser.id))
+    .returning();
+
+  res.json({
+    id: updated.id,
+    name: updated.name,
+    username: updated.username,
+    city: updated.city,
+    country: updated.country,
+    interests: updated.interests,
+    role: updated.role,
+    bio: updated.bio,
+    xp: updated.xp,
+    upvote_count: updated.upvote_count,
+    user_type: updated.user_type,
+    node_name: updated.node_name,
+    node_type: updated.node_type,
+  });
+});
+
 router.get("/users/me/node-stats", async (req: Request, res: Response): Promise<void> => {
   if (!req.currentUser) {
     res.status(401).json({ error: "unauthorized", message: "Not authenticated" });

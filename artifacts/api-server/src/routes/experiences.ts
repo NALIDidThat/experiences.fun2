@@ -425,4 +425,144 @@ router.post("/experiences/:id/complete", async (req: Request, res: Response): Pr
   }));
 });
 
+// PATCH /experiences/:id — edit experience (creator only)
+router.patch("/experiences/:id", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "validation_error", message: "Invalid experience id" });
+    return;
+  }
+
+  const [experience] = await db
+    .select()
+    .from(experiencesTable)
+    .where(eq(experiencesTable.id, id))
+    .limit(1);
+
+  if (!experience) {
+    res.status(404).json({ error: "not_found", message: "Experience not found" });
+    return;
+  }
+
+  if (experience.creator_id !== req.currentUser.id) {
+    res.status(403).json({ error: "forbidden", message: "Only the creator can edit this experience" });
+    return;
+  }
+
+  if (experience.status === "cancelled") {
+    res.status(400).json({ error: "cancelled", message: "Cannot edit a cancelled experience" });
+    return;
+  }
+
+  const { title, description, date, city, country, max_participants, xp_reward } = req.body as {
+    title?: string; description?: string; date?: string; city?: string;
+    country?: string; max_participants?: number | null; xp_reward?: number;
+  };
+
+  const updates: Partial<typeof experiencesTable.$inferInsert> = {};
+  if (title?.trim()) updates.title = title.trim();
+  if (description?.trim()) updates.description = description.trim();
+  if (date?.trim()) updates.date = date.trim();
+  if (city?.trim()) updates.city = city.trim();
+  if (country?.trim()) updates.country = country.trim();
+  if (max_participants !== undefined) updates.max_participants = max_participants ?? null;
+  if (xp_reward !== undefined && xp_reward >= 10 && xp_reward <= 500) updates.xp_reward = xp_reward;
+
+  const [updated] = await db
+    .update(experiencesTable)
+    .set(updates)
+    .where(eq(experiencesTable.id, id))
+    .returning();
+
+  res.json({ success: true, experience: { id: updated.id, title: updated.title, description: updated.description, date: updated.date, city: updated.city, country: updated.country, max_participants: updated.max_participants, xp_reward: updated.xp_reward } });
+});
+
+// POST /experiences/:id/cancel — cancel experience (creator only)
+router.post("/experiences/:id/cancel", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "validation_error", message: "Invalid experience id" });
+    return;
+  }
+
+  const [experience] = await db
+    .select()
+    .from(experiencesTable)
+    .where(eq(experiencesTable.id, id))
+    .limit(1);
+
+  if (!experience) {
+    res.status(404).json({ error: "not_found", message: "Experience not found" });
+    return;
+  }
+
+  if (experience.creator_id !== req.currentUser.id) {
+    res.status(403).json({ error: "forbidden", message: "Only the creator can cancel this experience" });
+    return;
+  }
+
+  if (experience.status === "cancelled") {
+    res.status(409).json({ error: "already_cancelled", message: "Experience is already cancelled" });
+    return;
+  }
+
+  await db
+    .update(experiencesTable)
+    .set({ status: "cancelled" })
+    .where(eq(experiencesTable.id, id));
+
+  res.json({ success: true });
+});
+
+// DELETE /experiences/:id/join — leave experience (participant only)
+router.delete("/experiences/:id/join", async (req: Request, res: Response): Promise<void> => {
+  if (!req.currentUser) {
+    res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
+    return;
+  }
+
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "validation_error", message: "Invalid experience id" });
+    return;
+  }
+
+  const [participation] = await db
+    .select()
+    .from(experienceParticipantsTable)
+    .where(
+      and(
+        eq(experienceParticipantsTable.experience_id, id),
+        eq(experienceParticipantsTable.user_id, req.currentUser.id)
+      )
+    )
+    .limit(1);
+
+  if (!participation) {
+    res.status(400).json({ error: "not_joined", message: "You haven't joined this experience" });
+    return;
+  }
+
+  if (participation.status === "completed") {
+    res.status(409).json({ error: "already_completed", message: "Cannot leave a completed experience" });
+    return;
+  }
+
+  await db
+    .delete(experienceParticipantsTable)
+    .where(eq(experienceParticipantsTable.id, participation.id));
+
+  res.json({ success: true });
+});
+
 export default router;

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
-import { MapPin, Calendar, Users, ArrowLeft, Loader2, Trophy, User, Share2, Clock, Copy, Check, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, Users, ArrowLeft, Loader2, Trophy, User, Share2, Clock, Copy, Check, ChevronRight, Pencil, Trash2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGetExperience, useJoinExperience, useCompleteExperience, useListExperiences } from "@workspace/api-client-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useGetExperience, useJoinExperience, useCompleteExperience, useListExperiences, useGetCurrentUser } from "@workspace/api-client-react";
 import { getAuthHeaders, isAuthenticated } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -361,6 +363,83 @@ export default function ExperienceDetail() {
   );
   const relatedExperiences = (relatedResult.data?.experiences || []).filter(e => e.id !== id).slice(0, 8);
 
+  const currentUserResult = useGetCurrentUser({
+    query: { enabled: isAuthenticated() } as { enabled: boolean; queryKey: readonly unknown[] },
+    request: { headers: getAuthHeaders() },
+  });
+  const currentUser = currentUserResult.data;
+  const isCreator = !!currentUser && !!experience && currentUser.username === experience.creator.username;
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ title: "", description: "", date: "", city: "", country: "", xp_reward: 100 });
+  const [editSaving, setEditSaving] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (experience && editOpen) {
+      setEditForm({
+        title: experience.title,
+        description: experience.description ?? "",
+        date: experience.date,
+        city: experience.city,
+        country: experience.country,
+        xp_reward: experience.xp_reward,
+      });
+    }
+  }, [experience, editOpen]);
+
+  const handleEdit = async () => {
+    setEditSaving(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/experiences/${id}`, {
+        method: "PATCH",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
+        setEditOpen(false);
+      }
+    } catch {}
+    setEditSaving(false);
+  };
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/experiences/${id}/cancel`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
+        setCancelConfirm(false);
+      }
+    } catch {}
+    setCancelling(false);
+  };
+
+  const handleLeave = async () => {
+    setLeaving(true);
+    try {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${base}/api/experiences/${id}/join`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: [`/api/experiences/${id}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/experiences"] });
+      }
+    } catch {}
+    setLeaving(false);
+  };
+
   const joinMutation = useJoinExperience({ request: { headers: getAuthHeaders() } });
   const completeMutation = useCompleteExperience({ request: { headers: getAuthHeaders() } });
 
@@ -673,6 +752,92 @@ export default function ExperienceDetail() {
                   Could not join. You may have already joined.
                 </p>
               )}
+
+              {/* Leave button — joined but not completed */}
+              {experience.joined && experience.participation_status === "joined" && (
+                <button
+                  onClick={handleLeave}
+                  disabled={leaving}
+                  className="mt-2 w-full text-xs text-gray-400 hover:text-red-500 py-2 transition-colors flex items-center justify-center gap-1"
+                >
+                  {leaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
+                  Leave experience
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Creator controls */}
+          {isCreator && experience.status !== "cancelled" && (
+            <div className="mt-4 border border-gray-100 rounded-2xl overflow-hidden">
+              <div className="px-4 py-2.5 bg-gray-50 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Creator controls
+              </div>
+              <div className="divide-y divide-gray-50">
+                <button
+                  onClick={() => setEditOpen(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors group"
+                >
+                  <Pencil className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-primary transition-colors">Edit experience</span>
+                </button>
+                <button
+                  onClick={() => setCancelConfirm(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-red-50 transition-colors group"
+                >
+                  <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                  <span className="text-sm font-semibold text-gray-700 group-hover:text-red-500 transition-colors">Cancel experience</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {experience.status === "cancelled" && (
+            <div className="mt-4 bg-red-50 border border-red-100 rounded-2xl p-4 text-center">
+              <p className="text-sm font-semibold text-red-600">This experience has been cancelled</p>
+            </div>
+          )}
+
+          {/* Edit modal */}
+          {editOpen && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4" onClick={() => setEditOpen(false)}>
+              <div className="bg-white rounded-3xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-bold text-gray-900">Edit Experience</h3>
+                <div className="space-y-3">
+                  <Input value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} placeholder="Title" className="h-10 text-sm bg-gray-50 rounded-xl border-gray-200" />
+                  <Textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} placeholder="Description" className="text-sm bg-gray-50 rounded-xl border-gray-200 resize-none min-h-[80px]" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="date" value={editForm.date} onChange={e => setEditForm(p => ({ ...p, date: e.target.value }))} className="h-10 text-sm bg-gray-50 rounded-xl border-gray-200" />
+                    <Input value={editForm.xp_reward} type="number" min={10} max={500} onChange={e => setEditForm(p => ({ ...p, xp_reward: Number(e.target.value) }))} placeholder="XP Reward" className="h-10 text-sm bg-gray-50 rounded-xl border-gray-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input value={editForm.city} onChange={e => setEditForm(p => ({ ...p, city: e.target.value }))} placeholder="City" className="h-10 text-sm bg-gray-50 rounded-xl border-gray-200" />
+                    <Input value={editForm.country} onChange={e => setEditForm(p => ({ ...p, country: e.target.value }))} placeholder="Country" className="h-10 text-sm bg-gray-50 rounded-xl border-gray-200" />
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" onClick={() => setEditOpen(false)} className="flex-1 h-10 rounded-xl text-sm">Cancel</Button>
+                  <Button onClick={handleEdit} disabled={editSaving} className="flex-1 h-10 bg-primary text-white rounded-xl text-sm">
+                    {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cancel confirm modal */}
+          {cancelConfirm && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4" onClick={() => setCancelConfirm(false)}>
+              <div className="bg-white rounded-3xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                <h3 className="text-base font-bold text-gray-900">Cancel this experience?</h3>
+                <p className="text-sm text-gray-500">All participants will lose their spot. This cannot be undone.</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setCancelConfirm(false)} className="flex-1 h-10 rounded-xl text-sm">Go back</Button>
+                  <Button onClick={handleCancel} disabled={cancelling} className="flex-1 h-10 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm">
+                    {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Yes, cancel it"}
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
