@@ -46,6 +46,9 @@ export const CompleteOnboardingBody = zod.object({
   bio: zod.string().max(completeOnboardingBodyBioMax).nullish(),
   wallet_address: zod.string().nullish(),
   privy_id: zod.string().nullish(),
+  user_type: zod.enum(["student", "educator"]).optional().default("student"),
+  node_name: zod.string().max(100).nullish(),
+  node_type: zod.string().nullish(),
 });
 
 export const CompleteOnboardingResponse = zod.object({
@@ -62,6 +65,9 @@ export const CompleteOnboardingResponse = zod.object({
     xp: zod.number(),
     upvote_count: zod.number(),
     created_at: zod.string(),
+    user_type: zod.string().optional(),
+    node_name: zod.string().nullish(),
+    node_type: zod.string().nullish(),
   }),
   session_token: zod.string(),
 });
@@ -82,6 +88,10 @@ export const GetCurrentUserResponse = zod.object({
   xp: zod.number(),
   upvote_count: zod.number(),
   created_at: zod.string(),
+  user_type: zod.string().optional(),
+  node_name: zod.string().nullish(),
+  node_type: zod.string().nullish(),
+  telegram_group_id: zod.string().nullish(),
 });
 
 /**

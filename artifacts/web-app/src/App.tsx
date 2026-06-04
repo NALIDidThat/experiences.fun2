@@ -16,6 +16,8 @@ import CreateExperience from "./pages/CreateExperience";
 import Token from "./pages/Token";
 import Map from "./pages/Map";
 import AppTutorial from "./pages/AppTutorial";
+import NodeDashboard from "./pages/NodeDashboard";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +43,8 @@ function Router() {
       <Route path="/u/:username" component={Profile} />
       <Route path="/experience/:id" component={ExperienceDetail} />
       <Route path="/create" component={CreateExperience} />
+      <Route path="/node-dashboard" component={NodeDashboard} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

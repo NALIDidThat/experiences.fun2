@@ -152,7 +152,7 @@ export default function Profile() {
                     {isMe && (
                       <Button
                         variant="outline"
-                        onClick={() => setLocation("/")}
+                        onClick={() => setLocation("/settings")}
                         className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"
                       >
                         <Settings className="w-4 h-4 mr-2" />
